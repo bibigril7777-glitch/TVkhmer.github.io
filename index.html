@@ -66,6 +66,14 @@ small{color:#8b949e}
     <button class="btn b" onclick="document.getElementById('stage').requestFullscreen&&document.getElementById('stage').requestFullscreen()">⛶ ពេញអេក្រង់</button>
   </div>
 
+  <p><small id="store">💾 កំពុងពិនិត្យទំហំផ្ទុក...</small></p>
+
+  <div class="row">
+    <button class="btn b" onclick="exportBK()">💾 បម្រុងទុក (Export)</button>
+    <button class="btn" onclick="document.getElementById('bk').click()">📂 ស្ដារ (Import)</button>
+    <input type="file" id="bk" accept=".tvbackup" class="hide" onchange="importBK(this)">
+  </div>
+
   <h3>🏷️ Logo ស្ថានីយ</h3>
   <input type="file" accept="image/*" onchange="setLogo(this)">
 
@@ -135,22 +143,102 @@ loadCountry();
 /* ===== My Station ===== */
 let items=[],ads=[],timer,adTimer,idx=0,running=false;
 function setLogo(i){const f=i.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{$('logo').src=r.result;$('logo').classList.remove('hide');try{localStorage.setItem('logo',r.result)}catch(e){}};r.readAsDataURL(f)}
-function addFiles(i){[...i.files].forEach(f=>items.push({type:f.type.startsWith('video')?'vid':'img',src:URL.createObjectURL(f),name:f.name}));i.value='';draw()}
-function addAds(i){[...i.files].forEach(f=>ads.push({src:URL.createObjectURL(f),name:f.name}));i.value='';draw()}
+/* ---- ឃ្លាំងផ្ទុកអចិន្ត្រៀយ៍ (IndexedDB) ---- */
+let db;
+const idb=(mode,fn)=>new Promise((res,rej)=>{const q=fn(db.transaction('m',mode).objectStore('m'));q.onsuccess=()=>res(q.result);q.onerror=()=>rej(q.error)});
+const dbPut=o=>idb('readwrite',s=>s.add(o)), dbDel=id=>idb('readwrite',s=>s.delete(id)), dbAll=()=>idb('readonly',s=>s.getAll());
+async function saveFiles(files,kind){
+  for(const f of files){
+    const o={kind,type:kind=='ad'?'img':f.type.startsWith('video')?'vid':'img',name:f.name,blob:f};
+    try{o.id=await dbPut(o)}catch(e){alert('⚠️ ទំហំផ្ទុកពេញ ឬមិនអាចរក្សាទុក៖ '+f.name);continue}
+    const v={id:o.id,type:o.type,name:o.name,src:URL.createObjectURL(f)};
+    (kind=='ad'?ads:items).push(v);
+  }
+  draw();showStore();
+}
+function addFiles(i){const f=[...i.files];i.value='';saveFiles(f,'item')}
+function addAds(i){const f=[...i.files];i.value='';saveFiles(f,'ad')}
+async function showStore(){
+  try{
+    const e=await navigator.storage.estimate(),p=navigator.storage.persisted?await navigator.storage.persisted():false;
+    const g=n=>n>=1e9?(n/1e9).toFixed(2)+' GB':(n/1e6).toFixed(1)+' MB';
+    $('store').textContent=`💾 ប្រើ ${g(e.usage)} / អាចប្រើបាន ${g(e.quota)} · ការការពារមិនឲ្យលុប៖ ${p?'✅ បើក':'⚠️ មិនទាន់បើក'}`;
+  }catch(e){$('store').textContent='💾 កម្មវិធីរុករកនេះមិនបង្ហាញទំហំផ្ទុក'}
+}
+/* ---- បម្រុងទុក / ស្ដារ (.tvbackup) ---- */
+const enc=new TextEncoder(),dec=new TextDecoder();
+async function exportBK(){
+  try{
+    const all=(await dbAll()).sort((a,b)=>a.id-b.id);
+    const parts=[enc.encode('TVBK1')];
+    const push=(h,b)=>{const hb=enc.encode(JSON.stringify(h)),n=new Uint8Array(4);new DataView(n.buffer).setUint32(0,hb.length);parts.push(n,hb);if(b)parts.push(b)};
+    let logo='',txt='';try{logo=localStorage.getItem('logo')||'';txt=localStorage.getItem('txt')||''}catch(e){}
+    push({kind:'meta',logo,txt,size:0});
+    all.forEach(o=>push(o.blob?{kind:o.kind,type:o.type,name:o.name,size:o.blob.size,mime:o.blob.type}:{kind:o.kind,type:'yt',name:o.name,src:o.src,dur:o.dur,size:0},o.blob));
+    const name='tv-backup-'+new Date().toISOString().slice(0,10)+'.tvbackup';
+    if(window.showSaveFilePicker){
+      const fh=await showSaveFilePicker({suggestedName:name}),w=await fh.createWritable();
+      for(const p of parts)await w.write(p);
+      await w.close();
+    }else{
+      const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(parts));a.download=name;a.click();
+      setTimeout(()=>URL.revokeObjectURL(a.href),120000);
+    }
+    alert('✅ បម្រុងទុកបានជោគជ័យ');
+  }catch(e){if(e.name!='AbortError')alert('⚠️ បម្រុងទុកមិនបាន៖ '+e.message)}
+}
+async function importBK(i){
+  const f=i.files[0];i.value='';if(!f)return;
+  try{
+    if(dec.decode(await f.slice(0,5).arrayBuffer())!='TVBK1')throw new Error('ឯកសារមិនត្រឹមត្រូវ');
+    const have=new Set((await dbAll()).map(o=>[o.kind,o.name,o.blob?o.blob.size:o.src].join('|')));
+    let off=5,n=0;
+    while(off<f.size){
+      const len=new DataView(await f.slice(off,off+4).arrayBuffer()).getUint32(0);off+=4;
+      const h=JSON.parse(dec.decode(await f.slice(off,off+len).arrayBuffer()));off+=len;
+      if(h.kind=='meta'){
+        try{if(h.logo){localStorage.setItem('logo',h.logo);$('logo').src=h.logo;$('logo').classList.remove('hide')}
+        if(h.txt){localStorage.setItem('txt',h.txt);$('txt').value=h.txt;setTick()}}catch(e){}
+        continue;
+      }
+      const blob=h.size?f.slice(off,off+h.size,h.mime):null;off+=h.size;
+      const key=[h.kind,h.name,h.size?h.size:h.src].join('|');
+      if(have.has(key))continue;
+      const o=blob?{kind:h.kind,type:h.type,name:h.name,blob}:{kind:h.kind,type:'yt',name:h.name,src:h.src,dur:h.dur};
+      o.id=await dbPut(o);have.add(key);n++;
+      const v=blob?{id:o.id,type:o.type,name:o.name,src:URL.createObjectURL(blob)}:{id:o.id,type:'yt',src:o.src,name:o.name,dur:o.dur};
+      (o.kind=='ad'?ads:items).push(v);
+    }
+    draw();showStore();alert('✅ ស្ដារបាន '+n+' ធាតុថ្មី');
+  }catch(e){alert('⚠️ ស្ដារមិនបាន៖ '+e.message)}
+}
+async function init(){
+  try{
+    await new Promise((res,rej)=>{const r=indexedDB.open('tvstation',1);r.onupgradeneeded=()=>r.result.createObjectStore('m',{keyPath:'id',autoIncrement:true});r.onsuccess=()=>{db=r.result;res()};r.onerror=()=>rej(r.error)});
+    try{if(navigator.storage&&navigator.storage.persist)await navigator.storage.persist()}catch(e){}
+    (await dbAll()).sort((a,b)=>a.id-b.id).forEach(o=>{
+      if(o.type=='yt')items.push({id:o.id,type:'yt',src:o.src,name:o.name,dur:o.dur});
+      else{const v={id:o.id,type:o.type,name:o.name,src:URL.createObjectURL(o.blob)};(o.kind=='ad'?ads:items).push(v)}
+    });
+    draw();
+  }catch(e){$('store').textContent='⚠️ មិនអាចប្រើឃ្លាំងផ្ទុកអចិន្ត្រៀយ៍បានទេ (សូមបើកតាម http://localhost ឬ https)'}
+  showStore();
+}
 function addYT(){
   const u=$('yt').value.trim();
   const m=u.match(/(?:v=|youtu\.be\/|embed\/|shorts\/|live\/)([\w-]{11})/);
   if(!m){alert('តំណ YouTube មិនត្រឹមត្រូវ');return}
-  items.push({type:'yt',src:m[1],name:'YouTube: '+m[1],dur:+$('ytd').value||60});$('yt').value='';draw();
+  const o={kind:'item',type:'yt',src:m[1],name:'YouTube: '+m[1],dur:+$('ytd').value||60};
+  dbPut(o).then(id=>{o.id=id}).catch(()=>{}).finally(()=>{items.push(o);draw();showStore()});$('yt').value='';
 }
 function draw(){
   $('items').innerHTML='';$('ads').innerHTML='';
   items.forEach((it,i)=>{const d=document.createElement('div');
     d.innerHTML=(it.type=='img'?`<img src="${it.src}">`:it.type=='vid'?'🎞️':'▶️')+'<span></span><button class="btn r">✕</button>';
-    d.querySelector('span').textContent=it.name;d.querySelector('button').onclick=()=>{items.splice(i,1);draw()};$('items').appendChild(d)});
+    d.querySelector('span').textContent=it.name;d.querySelector('button').onclick=()=>{if(confirm('លុបធាតុនេះចេញជាអចិន្ត្រៀយ៍?')){if(it.id)dbDel(it.id).catch(()=>{});items.splice(i,1);draw();showStore()}};$('items').appendChild(d)});
   ads.forEach((it,i)=>{const d=document.createElement('div');
     d.innerHTML=`<img src="${it.src}"><span></span><button class="btn r">✕</button>`;
-    d.querySelector('span').textContent=it.name;d.querySelector('button').onclick=()=>{ads.splice(i,1);draw()};$('ads').appendChild(d)});
+    d.querySelector('span').textContent=it.name;d.querySelector('button').onclick=()=>{if(confirm('លុបពាណិជ្ជកម្មនេះចេញជាអចិន្ត្រៀយ៍?')){if(it.id)dbDel(it.id).catch(()=>{});ads.splice(i,1);draw();showStore()}};$('ads').appendChild(d)});
 }
 function setTick(){
   const t=$('txt').value.trim();
@@ -175,6 +263,7 @@ function startST(){
   showAd();adTimer=setInterval(showAd,10000);
 }
 function stopST(){running=false;clearTimeout(timer);clearInterval(adTimer);$('screen').innerHTML='';$('ad').classList.add('hide')}
+init();
 try{const l=localStorage.getItem('logo');if(l){$('logo').src=l;$('logo').classList.remove('hide')}
 const t=localStorage.getItem('txt');if(t){$('txt').value=t;setTick()}}catch(e){}
 </script>
