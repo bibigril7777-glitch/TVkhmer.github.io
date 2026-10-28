@@ -25,7 +25,8 @@ load();
 
 const tokens = new Set(), fails = new Map();
 const uid = () => crypto.randomUUID();
-const send = (res, c, t, b) => { res.writeHead(c, { 'Content-Type': t }); res.end(b); };
+const CORS = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'content-type, x-token', 'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS' };
+const send = (res, c, t, b) => { res.writeHead(c, { 'Content-Type': t, ...CORS }); res.end(b); };
 const J = (res, c, o) => send(res, c, 'application/json', JSON.stringify(o));
 const body = req => new Promise(r => { let s = ''; req.on('data', c => { s += c; if (s.length > 1e6) req.destroy(); });
   req.on('end', () => { try { r(JSON.parse(s || '{}')); } catch (e) { r({}); } }); });
@@ -40,7 +41,7 @@ function media(req, res, f) {
     if (e) return send(res, 404, 'text/plain', 'not found');
     const x = db.items.concat(db.ads).find(i => i.file === f) || (db.logo && db.logo.file === f ? db.logo : null);
     let st = 0, en = s.size - 1, code = 200;
-    const h = { 'Content-Type': (x && x.mime) || 'application/octet-stream', 'Accept-Ranges': 'bytes' };
+    const h = { 'Content-Type': (x && x.mime) || 'application/octet-stream', 'Accept-Ranges': 'bytes', ...CORS };
     const m = (req.headers.range || '').match(/bytes=(\d*)-(\d*)/);
     if (m && (m[1] || m[2])) {
       if (m[1]) { st = +m[1]; if (m[2]) en = Math.min(+m[2], en); } else { st = Math.max(0, s.size - +m[2]); }
@@ -57,11 +58,11 @@ async function join(req, res) {
   const ip = req.socket.remoteAddress, f = fails.get(ip) || { n: 0, t: Date.now() };
   if (Date.now() - f.t > 6e5) { f.n = 0; f.t = Date.now(); }
   if (f.n >= 10) return J(res, 429, { ok: false, msg: 'សូមរង់ចាំបន្តិច' });
-  const v = String((await body(req)).v || '').trim();
+  const bd = await body(req), v = String(bd.v || '').replace(/[\u200B-\u200D\uFEFF]/g, '').trim(); // ignore hidden zero-width chars (Khmer keyboards)
   if (v === ADMIN) { const t = crypto.randomBytes(24).toString('hex'); tokens.add(t); return J(res, 200, { ok: true, msg: '(ត្រឹមត្រូវហើយ)', token: t }); }
   if (/^[\w.+-]{3,64}@gmail\.com$/i.test(v)) {
     const e = v.toLowerCase();
-    if (!db.users.some(u => u.email === e)) { db.users.push({ email: e, time: new Date().toISOString() }); save(); }
+    if (!db.users.some(u => u.email === e)) { db.users.push({ email: e, time: new Date().toISOString(), device: String(bd.d || '').slice(0, 40) }); save(); }
     return J(res, 200, { ok: true, msg: '✅ ចុះឈ្មោះបានសម្រេច' });
   }
   f.n++; fails.set(ip, f);
@@ -70,6 +71,7 @@ async function join(req, res) {
 
 http.createServer(async (req, res) => {
   const u = new URL(req.url, 'http://x'), p = decodeURIComponent(u.pathname), m = req.method; let r;
+  if (m === 'OPTIONS') { res.writeHead(204, CORS); return res.end(); }
   try {
     if (p === '/' || p === '/index.html') return send(res, 200, 'text/html; charset=utf-8', fs.readFileSync(path.join(__dirname, 'index.html')));
     if ((r = p.match(/^\/playlist\/([a-z]+)\.m3u8?$/))) {
