@@ -54,15 +54,15 @@ function media(req, res, f) {
 }
 
 // Registration (Gmail) / admin check — one input box
-async function join(req, res) {
+async function join(req, res, mode) { // mode: 'user' = Gmail only, 'admin' = admin only, none = both
   const ip = req.socket.remoteAddress, f = fails.get(ip) || { n: 0, t: Date.now() };
   if (Date.now() - f.t > 6e5) { f.n = 0; f.t = Date.now(); }
   if (f.n >= 10) return J(res, 429, { ok: false, msg: 'សូមរង់ចាំបន្តិច' });
-  const bd = await body(req), v = String(bd.v || '').replace(/[\u200B-\u200D\uFEFF]/g, '').trim(); // ignore hidden zero-width chars (Khmer keyboards)
-  if (v === ADMIN) { const t = crypto.randomBytes(24).toString('hex'); tokens.add(t); return J(res, 200, { ok: true, msg: '(ត្រឹមត្រូវហើយ)', token: t }); }
-  if (/^[\w.+-]{3,64}@gmail\.com$/i.test(v)) {
+  const bd = await body(req), v = String(bd.v || bd.email || bd.name || '').replace(/[\u200B-\u200D\uFEFF]/g, '').trim(); // ignore hidden zero-width chars (Khmer keyboards)
+  if (mode !== 'user' && v === ADMIN) { const t = crypto.randomBytes(24).toString('hex'); tokens.add(t); return J(res, 200, { ok: true, msg: '(ត្រឹមត្រូវហើយ)', token: t }); }
+  if (mode !== 'admin' && /^[\w.+-]{3,64}@gmail\.com$/i.test(v)) {
     const e = v.toLowerCase();
-    if (!db.users.some(u => u.email === e)) { db.users.push({ email: e, time: new Date().toISOString(), device: String(bd.d || '').slice(0, 40) }); save(); }
+    if (!db.users.some(u => u.email === e)) { db.users.push({ email: e, time: new Date().toISOString(), device: String(bd.d || bd.device || '').slice(0, 40) }); save(); }
     return J(res, 200, { ok: true, msg: '✅ ចុះឈ្មោះបានសម្រេច' });
   }
   f.n++; fails.set(ip, f);
@@ -81,6 +81,8 @@ http.createServer(async (req, res) => {
     if ((r = p.match(/^\/media\/([\w.-]+)$/))) return media(req, res, r[1]);
     if (p === '/api/state') return J(res, 200, pub());
     if (p === '/api/join' && m === 'POST') return join(req, res);
+    if (p === '/api/register' && m === 'POST') return join(req, res, 'user');   // {email, device}
+    if (p === '/api/admin' && m === 'POST') return join(req, res, 'admin');      // {name}
     if (!p.startsWith('/api/')) return send(res, 404, 'text/plain', 'not found');
 
     // ---- admin only ----
@@ -131,3 +133,16 @@ http.createServer(async (req, res) => {
     J(res, 404, { error: 'not found' });
   } catch (e) { J(res, 500, { error: 'server error' }); }
 }).listen(PORT, () => console.log('TV server: http://localhost:' + PORT));
+
+// ---- HTTP/2 example server (cleartext, trailers demo) ----
+const http2 = require('node:http2');
+const server = http2.createServer();
+server.on('stream', (stream) => {
+  stream.respond(undefined, { waitForTrailers: true });
+  stream.on('wantTrailers', () => {
+    stream.sendTrailers({ xyz: 'abc' });
+  });
+  stream.end('Hello World');
+});
+const H2PORT = process.env.H2_PORT || 3001;
+server.listen(H2PORT, () => console.log('HTTP/2 server: http://localhost:' + H2PORT));
