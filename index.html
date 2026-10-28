@@ -73,6 +73,7 @@ small{color:#8b949e}
   </div>
   <div class="row">
     <button class="btn" onclick="startST()">▶ បើក</button>
+    <button class="btn b" onclick="snd(true)">🔊 សំឡេង</button>
     <button class="btn r" onclick="stopST()">⏹ ឈប់</button>
     <button class="btn b" onclick="document.getElementById('stage').requestFullscreen&&document.getElementById('stage').requestFullscreen()">⛶ ពេញអេក្រង់</button>
   </div>
@@ -190,13 +191,13 @@ loadCountry();
 
 /* ===== ស្ថានីយខ្ញុំ ===== */
 let items=[],ads=[],timer,adTimer,idx=0,running=false;
-function setLogo(i){const f=i.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{$('logo').src=r.result;$('logo').classList.remove('hide');try{localStorage.setItem('logo',r.result)}catch(e){}};r.readAsDataURL(f)}
+function setLogo(i){if(!isAdm())return;const f=i.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{$('logo').src=r.result;$('logo').classList.remove('hide');try{localStorage.setItem('logo',r.result)}catch(e){}};r.readAsDataURL(f)}
 
 /* ---- ឃ្លាំងផ្ទុកអចិន្ត្រៀយ៍ (IndexedDB) ---- */
 let db;
 const idb=(mode,fn)=>new Promise((res,rej)=>{const q=fn(db.transaction('m',mode).objectStore('m'));q.onsuccess=()=>res(q.result);q.onerror=()=>rej(q.error)});
-const dbPut=o=>idb('readwrite',s=>s.add(o)), dbDel=id=>idb('readwrite',s=>s.delete(id)), dbAll=()=>idb('readonly',s=>s.getAll());
-async function saveFiles(files,kind){
+const dbPut=o=>idb('readwrite',s=>s.add(o)), dbDel=id=>idb('readwrite',s=>s.delete(id)), dbAll=()=>idb('readonly',s=>s.getAll()), dbSet=o=>idb('readwrite',s=>s.put(o));
+async function saveFiles(files,kind){if(!isAdm())return;
   for(const f of files){
     const o={kind,type:kind=='ad'?'img':f.type.startsWith('video')?'vid':'img',name:f.name,blob:f,cat:kind=='ad'?'':$('cat').value};
     try{o.id=await dbPut(o)}catch(e){alert('⚠️ ទំហំផ្ទុកពេញ ឬមិនអាចរក្សាទុក៖ '+f.name);continue}
@@ -216,14 +217,14 @@ async function showStore(){
 }
 /* ---- បម្រុងទុក / ស្ដារ (.tvbackup) ---- */
 const enc=new TextEncoder(),dec=new TextDecoder();
-async function exportBK(){
+async function exportBK(){if(!isAdm())return;
   try{
     const all=(await dbAll()).sort((a,b)=>a.id-b.id);
     const parts=[enc.encode('TVBK1')];
     const push=(h,b)=>{const hb=enc.encode(JSON.stringify(h)),n=new Uint8Array(4);new DataView(n.buffer).setUint32(0,hb.length);parts.push(n,hb);if(b)parts.push(b)};
     const meta={kind:'meta',size:0};try{['logo','txt','txt2','sz1','sz2','spd','ovl','sched','clk','ltxt'].forEach(k=>meta[k]=localStorage.getItem(k)||'')}catch(e){}
     push(meta);
-    all.forEach(o=>push(o.blob?{kind:o.kind,type:o.type,name:o.name,size:o.blob.size,mime:o.blob.type,cat:o.cat}:{kind:o.kind,type:'yt',name:o.name,src:o.src,dur:o.dur,size:0,cat:o.cat},o.blob));
+    all.forEach(o=>push(o.blob?{kind:o.kind,type:o.type,name:o.name,size:o.blob.size,mime:o.blob.type,cat:o.cat,hidden:o.hidden}:{kind:o.kind,type:'yt',name:o.name,src:o.src,dur:o.dur,size:0,cat:o.cat},o.blob));
     const name='tv-backup-'+new Date().toISOString().slice(0,10)+'.tvbackup';
     if(window.showSaveFilePicker){
       const fh=await showSaveFilePicker({suggestedName:name}),w=await fh.createWritable();
@@ -236,7 +237,7 @@ async function exportBK(){
     alert('✅ បម្រុងទុកបានជោគជ័យ');
   }catch(e){if(e.name!='AbortError')alert('⚠️ បម្រុងទុកមិនបាន៖ '+e.message)}
 }
-async function importBK(i){
+async function importBK(i){if(!isAdm())return;
   const f=i.files[0];i.value='';if(!f)return;
   try{
     if(dec.decode(await f.slice(0,5).arrayBuffer())!='TVBK1')throw new Error('ឯកសារមិនត្រឹមត្រូវ');
@@ -252,9 +253,9 @@ async function importBK(i){
       const blob=h.size?f.slice(off,off+h.size,h.mime):null;off+=h.size;
       const key=[h.kind,h.name,h.size?h.size:h.src].join('|');
       if(have.has(key))continue;
-      const o=blob?{kind:h.kind,type:h.type,name:h.name,blob,cat:h.cat}:{kind:h.kind,type:'yt',name:h.name,src:h.src,dur:h.dur,cat:h.cat};
+      const o=blob?{kind:h.kind,type:h.type,name:h.name,blob,cat:h.cat,hidden:h.hidden}:{kind:h.kind,type:'yt',name:h.name,src:h.src,dur:h.dur,cat:h.cat};
       o.id=await dbPut(o);have.add(key);n++;
-      const v=blob?{id:o.id,type:o.type,name:o.name,cat:o.cat,src:URL.createObjectURL(blob)}:{id:o.id,type:'yt',src:o.src,name:o.name,dur:o.dur,cat:o.cat};
+      const v=blob?{id:o.id,type:o.type,name:o.name,cat:o.cat,hidden:o.hidden,src:URL.createObjectURL(blob)}:{id:o.id,type:'yt',src:o.src,name:o.name,dur:o.dur,cat:o.cat};
       (o.kind=='ad'?ads:items).push(v);
     }
     draw();showStore();alert('✅ ស្ដារបាន '+n+' ធាតុថ្មី');
@@ -266,13 +267,13 @@ async function init(){
     try{if(navigator.storage&&navigator.storage.persist)await navigator.storage.persist()}catch(e){}
     (await dbAll()).sort((a,b)=>a.id-b.id).forEach(o=>{
       if(o.type=='yt')items.push({id:o.id,type:'yt',src:o.src,name:o.name,dur:o.dur,cat:o.cat});
-      else{const v={id:o.id,type:o.type,name:o.name,cat:o.cat,src:URL.createObjectURL(o.blob)};(o.kind=='ad'?ads:items).push(v)}
+      else{const v={id:o.id,type:o.type,name:o.name,cat:o.cat,hidden:o.hidden,src:URL.createObjectURL(o.blob)};(o.kind=='ad'?ads:items).push(v)}
     });
-    draw();
+    ready=true;draw();
   }catch(e){$('store').textContent='⚠️ មិនអាចប្រើឃ្លាំងផ្ទុកអចិន្ត្រៀយ៍បានទេ (សូមបើកតាម http://localhost ឬ https)'}
   showStore();
 }
-function addYT(){
+function addYT(){if(!isAdm())return;
   const u=$('yt').value.trim();
   const m=u.match(/(?:v=|youtu\.be\/|embed\/|shorts\/|live\/)([\w-]{11})/);
   if(!m){alert('តំណ YouTube មិនត្រឹមត្រូវ');return}
@@ -281,13 +282,13 @@ function addYT(){
 }
 function draw(){
   $('items').innerHTML='';$('ads').innerHTML='';
-  items.forEach((it,i)=>{if($('fcat').value&&it.cat!=$('fcat').value)return;const d=document.createElement('div');
+  items.forEach((it,i)=>{if(it.hidden||($('fcat').value&&it.cat!=$('fcat').value))return;const d=document.createElement('div');
     d.innerHTML=(it.type=='img'?`<img src="${it.src}">`:it.type=='vid'?'🎞️':'▶️')+'<span></span><button class="btn r">✕</button>';
-    d.querySelector('span').textContent=catL(it.cat)+it.name;d.querySelector('button').onclick=()=>{if(confirm('លុបធាតុនេះចេញជាអចិន្ត្រៀយ៍?')){if(it.id)dbDel(it.id).catch(()=>{});items.splice(i,1);draw();showStore()}};$('items').appendChild(d)});
+    d.querySelector('span').textContent=catL(it.cat)+it.name;d.querySelector('button').onclick=()=>delItem(it);$('items').appendChild(d)});
   ads.forEach((it,i)=>{const d=document.createElement('div');
     d.innerHTML=`<img src="${it.src}"><span></span><button class="btn r">✕</button>`;
-    d.querySelector('span').textContent=it.name;d.querySelector('button').onclick=()=>{if(confirm('លុបពាណិជ្ជកម្មនេះចេញជាអចិន្ត្រៀយ៍?')){if(it.id)dbDel(it.id).catch(()=>{});ads.splice(i,1);draw();showStore()}};$('ads').appendChild(d)});
-  fillSel();
+    d.querySelector('span').textContent=it.name;d.querySelector('button').onclick=()=>{if(isAdm()&&confirm('លុបពាណិជ្ជកម្មនេះចេញជាអចិន្ត្រៀយ៍?')){if(it.id)dbDel(it.id).catch(()=>{});ads.splice(i,1);draw();showStore()}};$('ads').appendChild(d)});
+  fillSel();drawSch();
 }
 function setTick(){
   const SZ={s:[14,24],m:[17,30],l:[22,38]},spd=($('spd').value||15)+'s';
@@ -305,58 +306,84 @@ function next(){
   $('pt').textContent=q.title?`${DAYS[q.day]} ${q.time} · ${q.title}`:'';$('pt').classList.toggle('hide',!q.title);
   const s=$('screen');s.innerHTML='';
   if(it.type=='img'){s.innerHTML=`<img class="m" src="${it.src}">`;if(!ck)timer=setTimeout(next,(+$('dur').value||8)*1000)}
-  else if(it.type=='vid'){const v=document.createElement('video');v.src=it.src;v.autoplay=true;v.playsInline=true;v.controls=false;v.setAttribute('controlsList','nodownload noremoteplayback');v.disablePictureInPicture=true;if(ck)v.loop=true;else v.onended=next;v.onerror=()=>{if(!ck)timer=setTimeout(next,1000)};s.appendChild(v);v.play().catch(()=>{v.muted=true;v.play().catch(()=>{})})}
-  else{s.innerHTML=`<iframe src="https://www.youtube.com/embed/${it.src}?autoplay=1&rel=0&controls=0&modestbranding=1&disablekb=1&fs=0&iv_load_policy=3&playsinline=1" allow="autoplay;encrypted-media;fullscreen" allowfullscreen></iframe>`;if(!ck)timer=setTimeout(next,it.dur*1000)}
+  else if(it.type=='vid'){const v=document.createElement('video');v.src=it.src;v.muted=!wantSound;v.autoplay=true;v.playsInline=true;v.controls=false;v.setAttribute('controlsList','nodownload noremoteplayback');v.disablePictureInPicture=true;if(ck)v.loop=true;else v.onended=next;v.onerror=()=>{if(!ck)timer=setTimeout(next,1000)};s.appendChild(v);v.play().catch(()=>{v.muted=true;v.play().catch(()=>{})})}
+  else{s.innerHTML=`<iframe src="https://www.youtube.com/embed/${it.src}?autoplay=1&mute=1&enablejsapi=1&rel=0&controls=0&modestbranding=1&disablekb=1&fs=0&iv_load_policy=3&playsinline=1${ck?'&loop=1&playlist='+it.src:''}${location.protocol.startsWith('http')?'&origin='+encodeURIComponent(location.origin):''}" allow="autoplay;encrypted-media;fullscreen" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>`;
+    const f=s.firstChild;if(f)f.onload=()=>{if(wantSound)snd(true)};
+    if(!ck)timer=setTimeout(next,it.dur*1000)}
 }
 /* ===== កាលវិភាគ ច័ន្ទ–អាទិត្យ ===== */
 const DAYS=['ច័ន្ទ','អង្គារ','ពុធ','ព្រហស្បតិ៍','សុក្រ','សៅរ៍','អាទិត្យ'];
 $('sd').innerHTML=DAYS.map((d,i)=>`<option value="${i}">${d}</option>`).join('');
-let sched=[],Q=[],curI=-1,clock=false,viewed=false;
+let sched=[],Q=[],curI=-1,clock=true,viewed=false,wantSound=false,ready=false,adminOn=false;
+/* កាលវិភាគរក្សាតំណ YouTube ផ្ទាល់ខ្លួន ដូច្នេះលុបតំណពីបញ្ជីបាន ហើយនៅតែចាក់តាមម៉ោង */
+const ytOf=s=>s.yt||((/^YouTube: ([\w-]{11})$/.exec(s.name||''))||[])[1];
+async function delItem(it){if(!isAdm())return;
+  const used=sched.filter(s=>s.itemId==it.id||s.name==it.name);
+  if(!confirm(used.length?'លុបចេញពីបញ្ជី? កាលវិភាគនៅតែចាក់វិដេអូ/រូបនេះតាមម៉ោងកំណត់។':'លុបធាតុនេះចេញជាអចិន្ត្រៀយ៍?'))return;
+  if(it.type=='yt')used.forEach(s=>{s.yt=it.src;s.ytdur=it.dur||60});
+  if(used.length&&it.type!='yt'){ // ឯកសារប្រើក្នុងកាលវិភាគ៖ លាក់ពីបញ្ជី តែរក្សាឯកសារទុកសម្រាប់កាលវិភាគ
+    it.hidden=true;
+    try{if(it.id){const r=await idb('readonly',s=>s.get(it.id));if(r){r.hidden=true;await dbSet(r)}}}catch(e){}
+  }else{if(it.id)dbDel(it.id).catch(()=>{});const k=items.indexOf(it);if(k>=0)items.splice(k,1)}
+  saveSch();draw();showStore();
+}
+function purgeHidden(){if(!isAdm())return; // លុបឯកសារដែលលាក់ ពេលមិនប្រើក្នុងកាលវិភាគទៀត
+  items.filter(i=>i.hidden&&!sched.some(s=>s.itemId==i.id||s.name==i.name)).forEach(i=>{if(i.id)dbDel(i.id).catch(()=>{});items.splice(items.indexOf(i),1)});
+  draw();showStore();
+}
 const CATS=[['animal','🐾 ឯកសារសត្វ'],['cartoon','🎨 តុក្កតា'],['recap','📖 សម្រាយរឿង'],['movie','🎬 រឿង'],['sport','⚽ កីឡា'],['music','🎵 តន្ត្រី'],['ads','📢 ពាណិជ្ជកម្ម'],['fun','😄 កម្សាន្ត'],['short','⏱️ វីដេអូខ្លី']];
 const catL=c=>{const x=CATS.find(k=>k[0]==c);return x?x[1]+' · ':''};
 $('cat').innerHTML='<option value="">គ្មានប្រភេទ</option>'+CATS.map(k=>`<option value="${k[0]}">${k[1]}</option>`).join('');
 $('fcat').innerHTML='<option value="">ទាំងអស់</option>'+CATS.map(k=>`<option value="${k[0]}">${k[1]}</option>`).join('');
 function showStats(){let v=0;try{v=+localStorage.getItem('views')||0}catch(e){}$('stats').textContent=`👁️ ចំនួនអ្នកមើល (ចំនួនដងបើក លើឧបករណ៍នេះ)៖ ${v} · 👥 អ្នកចុះឈ្មោះ៖ ${getUsers().length}`}
-function setLtxt(){const t=$('ltx').value.trim();try{localStorage.setItem('ltxt',t)}catch(e){}$('ltxt').textContent=t;$('ltxt').classList.toggle('hide',!t)}
+function setLtxt(){if(!isAdm())return;const t=$('ltx').value.trim();try{localStorage.setItem('ltxt',t)}catch(e){}$('ltxt').textContent=t;$('ltxt').classList.toggle('hide',!t)}
 const clk=()=>clock&&sched.length>0;
 const saveSch=()=>{try{localStorage.setItem('sched',JSON.stringify(sched))}catch(e){}};
-const isAdm=()=>!$('adm').classList.contains('hide');
-function fillSel(){const s=$('si');s.innerHTML='';items.forEach(i=>{const o=document.createElement('option');o.value=i.id;o.textContent=(i.type=='vid'?'🎞️ ':i.type=='img'?'🖼️ ':'▶️ ')+catL(i.cat)+i.name;s.appendChild(o)})}
+const isAdm=()=>adminOn; // សិទ្ធិ admin ក្នុងអង្គចងចាំតែប៉ុណ្ណោះ
+function fillSel(){const s=$('si');s.innerHTML='';items.filter(i=>!i.hidden).forEach(i=>{const o=document.createElement('option');o.value=i.id;o.textContent=(i.type=='vid'?'🎞️ ':i.type=='img'?'🖼️ ':'▶️ ')+catL(i.cat)+i.name;s.appendChild(o)})}
 function drawSch(){
   const L=$('sched');L.innerHTML='';
   sched.forEach(s=>{const d=document.createElement('div'),sp=document.createElement('span');
-    sp.style.flex='1';sp.textContent=`${DAYS[s.day]} ${s.time||'00:00'} — ${s.title||s.name}`;d.appendChild(sp);
-    if(isAdm()){const b=document.createElement('button');b.className='btn r';b.textContent='✕';b.onclick=()=>{if(confirm('លុប?')){sched=sched.filter(x=>x.id!=s.id);saveSch();drawSch()}};d.appendChild(b)}
+    sp.style.flex='1';const gone=ready&&!ytOf(s)&&!items.some(i=>i.id==s.itemId||i.name==s.name);
+    sp.textContent=`${gone?'⚠️ ':''}${DAYS[s.day]} ${s.time||'00:00'} — ${s.title||s.name}${gone?' (វិដេអូត្រូវបានលុប)':''}`;d.appendChild(sp);
+    if(isAdm()){const b=document.createElement('button');b.className='btn r';b.textContent='✕';b.onclick=()=>{if(isAdm()&&confirm('លុប?')){sched=sched.filter(x=>x.id!=s.id);saveSch();purgeHidden();drawSch()}};d.appendChild(b)}
     d.style.display='flex';d.style.gap='8px';L.appendChild(d)});
   if(!sched.length)L.innerHTML='<div>មិនទាន់មានកាលវិភាគ</div>';
 }
-function addSch(){
+function addSch(){if(!isAdm())return;
   const it=items.find(i=>i.id==$('si').value);if(!it)return alert('សូមបន្ថែមវិដេអូមុន');
-  sched.push({id:Date.now(),day:+$('sd').value,time:$('stm').value||'00:00',title:$('sti').value.trim(),itemId:it.id,name:it.name});
+  sched.push({id:Date.now(),day:+$('sd').value,time:$('stm').value||'00:00',title:$('sti').value.trim(),itemId:it.id,name:it.name,...(it.type=='yt'?{yt:it.src,ytdur:it.dur||60}:{})});
   sched.sort((a,b)=>a.day-b.day||(a.time||'').localeCompare(b.time||''));saveSch();$('sti').value='';drawSch();
 }
 const tkey=(d,t)=>{const [H,M]=(t||'00:00').split(':');return d*1440+(+H||0)*60+(+M||0)};
 function buildQ(){
-  const L=sched.map(s=>({it:items.find(i=>i.id==s.itemId)||items.find(i=>i.name==s.name),title:s.title,day:s.day,time:s.time||'00:00',key:tkey(s.day,s.time)})).filter(x=>x.it);
+  const L=sched.map(s=>({it:items.find(i=>i.id==s.itemId)||items.find(i=>i.name==s.name)||(ytOf(s)?{type:'yt',src:ytOf(s),dur:s.ytdur||60,name:s.name}:undefined),title:s.title,day:s.day,time:s.time||'00:00',key:tkey(s.day,s.time)})).filter(x=>x.it);
   L.sort((a,b)=>a.key-b.key);
-  return L.length?L:items.filter(i=>!$('fcat').value||i.cat==$('fcat').value).map(it=>({it,title:'',day:0,time:'00:00',key:0}));
+  return L.length?L:(isAdm()?items:[]).filter(i=>!i.hidden&&(!$('fcat').value||i.cat==$('fcat').value)).map(it=>({it,title:'',day:0,time:'00:00',key:0}));
 }
 function curPos(now=new Date()){ // កម្មវិធីដែលត្រូវនឹងម៉ោងបច្ចុប្បន្ន (ថ្ងៃ+ម៉ោង)
   const k=tkey((now.getDay()+6)%7,now.getHours()+':'+now.getMinutes());let p=-1;
   Q.forEach((q,i)=>{if(q.key<=k&&(p<0||q.key>=Q[p].key))p=i});
   return p<0?Q.reduce((b,q,i)=>q.key>=Q[b].key?i:b,0):p; // មុនកម្មវិធីដំបូង → កម្មវិធីចុងក្រោយនៃសប្តាហ៍
 }
-function setClk(){clock=$('clk').checked;try{localStorage.setItem('clk',clock?'1':'')}catch(e){}if(running)startST(true)}
+function snd(on){ // បើក/បិទសំឡេង (វីដេអូ និង YouTube)
+  wantSound=on;const s=$('screen');
+  [...(s.children||[])].forEach(e=>{
+    if(e.tagName=='VIDEO'){e.muted=!on;if(on)e.play&&e.play().catch(()=>{})}
+    else if(e.contentWindow)e.contentWindow.postMessage(JSON.stringify({event:'command',func:on?'unMute':'mute',args:[]}),'*');
+  });
+}
+function setClk(){if(!isAdm())return;clock=$('clk').checked;try{localStorage.setItem('clk',clock?'1':'0')}catch(e){}if(running)startST(true)}
 setInterval(()=>{if(running&&clk()){const p=curPos();if(p!==curI){idx=p;next()}}},15000);
 /* រូបថតលើវិដេអូ */
-function setOvl(i){
+function setOvl(i){if(!isAdm())return;
   const f=i.files[0];i.value='';if(!f)return;const im=new Image();
   im.onload=()=>{const k=Math.min(1,800/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=im.width*k;c.height=im.height*k;
     c.getContext('2d').drawImage(im,0,0,c.width,c.height);
     try{localStorage.setItem('ovl',c.toDataURL('image/jpeg',.85))}catch(e){alert('⚠️ រក្សាទុករូបមិនបាន')}loadSettings()};
   im.src=URL.createObjectURL(f);
 }
-function clearOvl(){try{localStorage.removeItem('ovl')}catch(e){}loadSettings()}
+function clearOvl(){if(!isAdm())return;try{localStorage.removeItem('ovl')}catch(e){}loadSettings()}
 function loadSettings(){
   const g=k=>{try{return localStorage.getItem(k)||''}catch(e){return''}};
   const l=g('logo'),o=g('ovl');
@@ -364,13 +391,14 @@ function loadSettings(){
   if(o)$('ovl').src=o;$('ovl').classList.toggle('hide',!o);
   $('txt').value=g('txt');$('txt2').value=g('txt2');$('sz1').value=g('sz1')||'m';$('sz2').value=g('sz2')||'m';$('spd').value=g('spd')||15;
   try{sched=JSON.parse(g('sched')||'[]')}catch(e){sched=[]}
-  clock=g('clk')=='1';$('clk').checked=clock;
+  clock=g('clk')!=='0';$('clk').checked=clock;
   const lt=g('ltxt');$('ltx').value=lt;$('ltxt').textContent=lt;$('ltxt').classList.toggle('hide',!lt);
   setTick();drawSch();showStats();
 }
 function startST(quiet){
-  Q=buildQ();if(!Q.length){if(quiet!==true)alert('សូមបន្ថែមរូបថត វីដេអូ ឬ YouTube មុន');return}
-  if(!viewed){viewed=true;try{localStorage.setItem('views',+(localStorage.getItem('views')||0)+1)}catch(e){}showStats()}
+  Q=buildQ();if(!Q.length){if(quiet===undefined)alert(isAdm()?'សូមបន្ថែមរូបថត វីដេអូ ឬ YouTube មុន':'មិនទាន់មានកាលវិភាគសម្រាប់ចាក់');return}
+  if(quiet!=='auto')wantSound=true;
+  if(!viewed&&quiet!=='auto'){viewed=true;try{localStorage.setItem('views',+(localStorage.getItem('views')||0)+1)}catch(e){}showStats()}
   stopST();running=true;idx=curPos();setTick();next();
   let a=0;
   const showAd=()=>{const el=$('ad');if(!ads.length){el.classList.add('hide');return}
@@ -386,7 +414,7 @@ const getUsers=()=>{try{return JSON.parse(localStorage.getItem('users')||'[]')}c
 function join(){
   const v=$('who').value.replace(/[\u200B-\u200D\uFEFF]/g,'').trim();$('who').value='';if(!v)return;
   const m=$('msg');
-  if(H(v)===ADMIN_H){$('adm').classList.remove('hide');drawSch();showStats();m.style.color='#3fb950';m.textContent='(ត្រឹមត្រូវហើយ)';startST(true);return}
+  if(H(v)===ADMIN_H){adminOn=true;$('adm').classList.remove('hide');drawSch();showStats();m.style.color='#3fb950';m.textContent='(ត្រឹមត្រូវហើយ)';startST(true);return}
   if(GM.test(v)){
     let reg='';try{reg=localStorage.getItem('reg')||''}catch(e){}
     if(reg){m.style.color='#3fb950';m.textContent='✅ ចុះឈ្មោះរួចហើយ';startST(true);return} // ចុះឈ្មោះម្តងហើយ មិនចុះម្តងទៀត
@@ -397,7 +425,7 @@ function join(){
   }
   m.style.color='#f85149';m.textContent='⚠️ សូមបញ្ចូល Gmail ឲ្យត្រឹមត្រូវ';
 }
-function showUsers(){
+function showUsers(){if(!isAdm())return;
   const u=getUsers(),L=$('users');L.innerHTML='';
   u.forEach(x=>{const d=document.createElement('div');d.textContent=x.email+'  ·  '+x.time.slice(0,10);L.appendChild(d)});
   if(!u.length)L.innerHTML='<div>គ្មាន</div>';
@@ -405,7 +433,7 @@ function showUsers(){
 $('who').addEventListener('keydown',e=>{if(e.key=='Enter')join()});
 try{const r=localStorage.getItem('reg');if(r){$('msg').style.color='#3fb950';$('msg').textContent='✅ ចុះឈ្មោះរួចហើយ ('+r+')'}}catch(e){}
 
-init();loadSettings();
+init().then(()=>{if(clk())startST('auto')});loadSettings();
 </script>
 </body>
 </html>
