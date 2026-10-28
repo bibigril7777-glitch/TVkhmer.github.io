@@ -107,6 +107,7 @@ small{color:#8b949e}
 
 <script>
 const $=id=>document.getElementById(id);
+const SV=location.protocol.startsWith('http')?'':'http://localhost:3000';
 const DAYS=['ច័ន្ទ','អង្គារ','ពុធ','ព្រហស្បតិ៍','សុក្រ','សៅរ៍','អាទិត្យ'];
 $('sd').innerHTML=DAYS.map((d,i)=>`<option value="${i}">${d}</option>`).join('');
 function tab(n){$('p1').classList.toggle('hide',n!=1);$('p2').classList.toggle('hide',n!=2);$('t1').classList.toggle('on',n==1);$('t2').classList.toggle('on',n==2);if(n==2)$('tv').pause()}
@@ -120,7 +121,7 @@ async function loadCountry(){
   $('list').innerHTML='<div>កំពុងផ្ទុក...</div>';
   try{
     const k=$('country').value;let r=null;
-    if(location.protocol.startsWith('http')){try{r=await fetch(`/playlist/${SRV[k]}.m3u8`);if(!r.ok)r=null}catch(e){r=null}}
+    {try{r=await fetch(`${SV}/playlist/${SRV[k]}.m3u8`);if(!r.ok)r=null}catch(e){r=null}}
     if(!r)r=await fetch(`https://iptv-org.github.io/iptv/${k=='eng'?'languages':'countries'}/${k}.m3u`);
     if(!r.ok)throw 0;
     const L=(await r.text()).split('\n');chans=[];
@@ -147,10 +148,11 @@ loadCountry();
 
 /* ===== ស្ថានីយខ្ញុំ (ទិន្នន័យពី Server.js) ===== */
 let S={items:[],ads:[],schedule:[]},TK='',curKey='',adI=0;
-const api=(p,o={})=>fetch(p,{...o,headers:{'x-token':TK,'content-type':'application/json',...(o.headers||{})}}).then(r=>r.json());
+const api=(p,o={})=>fetch(SV+p,{...o,headers:{'x-token':TK,'content-type':'application/json',...(o.headers||{})}}).then(r=>r.json());
 
 async function load(){
-  try{S=await (await fetch('/api/state')).json()}catch(e){$('sched').innerHTML='<div>⚠️ សូមបើកតាម Server.js (http://localhost:3000)</div>';return}
+  try{S=await (await fetch(SV+'/api/state')).json()}catch(e){$('sched').innerHTML='<div>⚠️ មិនអាចភ្ជាប់ Server។ សូមដំណើរការ node Server.js រួចបើក http://localhost:3000</div>';return}
+  if(S.logo)S.logo=SV+S.logo;S.items.forEach(i=>i.url=i.url&&SV+i.url);S.ads.forEach(i=>i.url=SV+i.url);
   $('logo').classList.toggle('hide',!S.logo);if(S.logo)$('logo').src=S.logo;
   $('tick').classList.toggle('hide',!S.ticker);$('tickt').textContent=S.ticker;$('tickt').style.animationDuration=S.speed+'s';
   if(TK){$('txt').value=S.ticker;$('spd').value=S.speed}
@@ -192,19 +194,37 @@ setInterval(checkSched,15000);setInterval(load,60000);
 setInterval(()=>{const a=$('ad');if(!S.ads.length){a.classList.add('hide');return}a.src=S.ads[adI++%S.ads.length].url;a.classList.remove('hide')},10000);
 
 /* ចុះឈ្មោះ Gmail / admin */
-async function join(){
-  const v=$('who').value.trim();if(!v)return;
-  try{
-    const r=await (await fetch('/api/join',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({v})})).json();
-    $('msg').textContent=r.msg||'';$('who').value='';
-    if(r.token){TK=r.token;$('adm').classList.remove('hide');$('txt').value=S.ticker;$('spd').value=S.speed;lists();bks()}
-  }catch(e){$('msg').textContent='⚠️ មិនអាចភ្ជាប់ Server'}
+const GM=/^[\w.+-]{3,64}@gmail\.com$/i,LS=(k,v)=>{try{if(v===undefined)return localStorage.getItem(k);localStorage.setItem(k,v)}catch(e){return null}};
+const DEV=LS('dev')||(()=>{const d=Math.random().toString(36).slice(2)+Date.now().toString(36);LS('dev',d);return d})();
+/* ចុះឈ្មោះលើឧបករណ៍ភ្លាមៗ (មិនត្រូវការ Server) ហើយផ្ញើទៅ Server ពេលក្រោយដោយស្វ័យប្រវត្តិ */
+async function sync(){
+  let p=[];try{p=JSON.parse(LS('pend')||'[]')}catch(e){}
+  for(const e of [...p]){
+    try{const r=await (await fetch(SV+'/api/join',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({v:e,d:DEV})})).json();
+      if(r.ok){p=p.filter(x=>x!=e);LS('pend',JSON.stringify(p))}}catch(x){break}
+  }
 }
+async function join(){
+  const v=$('who').value.replace(/[\u200B-\u200D\uFEFF]/g,'').trim();if(!v)return;
+  const m=$('msg');$('who').value='';
+  if(GM.test(v)){
+    const e=v.toLowerCase();let p=[];try{p=JSON.parse(LS('pend')||'[]')}catch(x){}
+    LS('reg',e);if(!p.includes(e)){p.push(e);LS('pend',JSON.stringify(p))}
+    m.style.color='#3fb950';m.textContent='✅ ឧបករណ៍នេះចុះឈ្មោះបានសម្រេច';sync();return;
+  }
+  try{
+    const r=await (await fetch(SV+'/api/join',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({v})})).json();
+    m.textContent=r.msg||'';m.style.color=r.ok?'#3fb950':'#f85149';
+    if(r.token){TK=r.token;$('adm').classList.remove('hide');$('txt').value=S.ticker;$('spd').value=S.speed;lists();bks()}
+  }catch(e){m.style.color='#f85149';m.textContent='⚠️ មិនអាចភ្ជាប់ Server'}
+}
+if(LS('reg')){$('msg').style.color='#3fb950';$('msg').textContent='✅ ឧបករណ៍នេះបានចុះឈ្មោះរួចហើយ ('+LS('reg')+')'}
+sync();setInterval(sync,60000);
 
 /* ផ្នែក admin */
 async function up(i,kind){
   const fs=[...i.files];i.value='';$('msg').textContent='កំពុងផ្ទុកឡើង...';
-  for(const f of fs)await fetch(`/api/upload?kind=${kind}&name=${encodeURIComponent(f.name)}`,{method:'POST',headers:{'x-token':TK,'content-type':f.type||'application/octet-stream'},body:f});
+  for(const f of fs)await fetch(`${SV}/api/upload?kind=${kind}&name=${encodeURIComponent(f.name)}`,{method:'POST',headers:{'x-token':TK,'content-type':f.type||'application/octet-stream'},body:f});
   $('msg').textContent='✅ ផ្ទុកឡើងរួច';load();
 }
 async function addYT(){
@@ -221,6 +241,7 @@ async function bks(){const l=await api('/api/backups');$('bks').innerHTML=l.map(
 async function mkBK(){await api('/api/backup',{method:'POST'});await bks();alert('✅ បម្រុងទុករួច')}
 async function rsBK(){if($('bks').value&&confirm('ស្ដារទិន្នន័យពីការបម្រុងទុកនេះ?')){await api('/api/restore',{method:'POST',body:JSON.stringify({name:$('bks').value})});load();alert('✅ ស្ដាររួច')}}
 async function showUsers(){const u=await api('/api/users');$('users').innerHTML='';u.forEach(x=>$('users').appendChild(row(x.email+'  ·  '+x.time.slice(0,10))));if(!u.length)$('users').innerHTML='<div>គ្មាន</div>'}
+$('who').addEventListener('keydown',e=>{if(e.key=='Enter')join()});
 load();
 </script>
 </body>
