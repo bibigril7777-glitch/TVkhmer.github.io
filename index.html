@@ -1,439 +1,99 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="km">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>ទូរទស្សន៍ IPTV និងស្ថានីយផ្ទាល់ខ្លួន</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/hls.js/1.5.7/hls.min.js"></script>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Cambodia M3 TV</title>
 <style>
-*{box-sizing:border-box}
-body{margin:0;font-family:"Khmer OS","Noto Sans Khmer",system-ui,sans-serif;background:#0d1117;color:#e6edf3}
-header{display:flex;gap:8px;padding:10px;background:#161b22;position:sticky;top:0;z-index:5}
-header button{flex:1;padding:12px;border:0;border-radius:8px;background:#21262d;color:#e6edf3;font-size:16px}
-header button.on{background:#e50914}
-main{padding:10px;max-width:1000px;margin:auto}
-.hide{display:none}
-.stage{position:relative;width:100%;aspect-ratio:16/9;background:#000;border-radius:10px;overflow:hidden}
-.stage video,.stage iframe,.stage img.m{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;border:0;background:#000}
-#lg{position:absolute;top:40px;right:8px;z-index:3;max-width:32%;text-align:center}
-#logo{display:block;max-height:60px;max-width:100%;margin:0 auto}
-#ltxt{margin-top:2px;font-weight:bold;font-size:13px;text-shadow:0 1px 3px #000;animation:bf 1.6s ease-in-out infinite alternate}
-@keyframes bf{from{transform:translateX(-10px) scale(.88)}to{transform:translateX(10px) scale(1.12)}}
-#screen *{pointer-events:none}
-#shield{position:absolute;inset:0;z-index:6}
-#stage{user-select:none;-webkit-user-select:none}
-#ad{position:absolute;left:8px;bottom:46px;max-height:28%;max-width:35%;z-index:3;border-radius:6px;border:2px solid #fff}
-.tick{position:absolute;left:0;right:0;bottom:0;height:var(--h,28px);background:rgba(200,0,0,.85);overflow:hidden;z-index:4;white-space:nowrap}
-.tick.top{top:0;bottom:auto;background:rgba(0,70,200,.88)}
-#pt{position:absolute;top:40px;left:8px;z-index:3;background:rgba(0,0,0,.65);padding:4px 10px;border-radius:6px;font-size:14px}
-#ovl{position:absolute;right:8px;bottom:46px;max-height:30%;max-width:30%;z-index:3;border-radius:6px}
-.tick span{display:inline-block;padding-left:100%;line-height:var(--h,28px);font-size:var(--f,16px);font-weight:bold;animation:t 15s linear infinite}
-@keyframes t{to{transform:translateX(-100%)}}
-.row{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
-select,input[type=text],input[type=search],input[type=number],input[type=time],textarea{flex:1;min-width:120px;padding:10px;border-radius:8px;border:1px solid #30363d;background:#161b22;color:#e6edf3;font-size:15px}
-.btn{padding:10px 14px;border:0;border-radius:8px;background:#238636;color:#fff;font-size:15px;cursor:pointer}
-.btn.r{background:#da3633}.btn.b{background:#1f6feb}
-.list{max-height:320px;overflow:auto;background:#161b22;border-radius:8px}
-.list div{padding:10px;border-bottom:1px solid #21262d;cursor:pointer}
-.list div:hover{background:#21262d}
-h3{margin:18px 0 6px}
-.items div{display:flex;align-items:center;gap:8px;padding:6px;background:#161b22;margin:4px 0;border-radius:8px}
-.items img{width:48px;height:36px;object-fit:cover;border-radius:4px}
-.items span{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-small{color:#8b949e}
+:root{--bg:#08111f;--panel:#111f33;--gold:#ffc857;--text:#f4f7fb;--muted:#a9b8ca;--red:#e63946}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,'Noto Sans Khmer',sans-serif}
+header{background:#101c2e;border-bottom:2px solid var(--gold);padding:12px 4%;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+#logo{width:64px;height:64px;object-fit:contain;background:#fff;border-radius:10px}h1{font-size:clamp(20px,3vw,30px);margin:0}header p{margin:3px 0;color:var(--muted)}#logoCaption{margin:5px 0 0;color:var(--gold);font-weight:800;max-width:520px;overflow:hidden;white-space:nowrap;animation:captionMove 9s ease-in-out infinite alternate,captionFade 5s ease-in-out infinite}@keyframes captionMove{from{transform:translateX(0)}to{transform:translateX(24px)}}@keyframes captionFade{0%,100%{opacity:.2}50%{opacity:1}}
+.header-right{margin-left:auto;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+button,input,select,textarea{font:inherit;border-radius:8px;border:1px solid #34465e;padding:9px;background:#0a1525;color:var(--text);max-width:100%}
+button{cursor:pointer;background:var(--gold);color:#172033;border:0;font-weight:700}button.secondary{background:#263750;color:white}button.danger{background:#b52c39;color:white}
+.ticker{overflow:hidden;white-space:nowrap;background:#9d1424;padding:8px 0;font-weight:700}.ticker span{display:inline-block;padding-left:100%;animation:scroll 24s linear infinite}
+@keyframes scroll{to{transform:translateX(-100%)}}
+nav{display:flex;gap:8px;flex-wrap:wrap;padding:12px 4%;background:#0d192a}nav button{background:#22344d;color:white}nav button.active{background:var(--gold);color:#172033}
+main{padding:18px 4%;max-width:1500px;margin:auto}.grid{display:grid;grid-template-columns:minmax(0,2fr) minmax(280px,1fr);gap:18px}
+.panel{background:var(--panel);border:1px solid #263a54;border-radius:14px;padding:16px;margin-bottom:16px;min-width:0}.panel h2{margin:0 0 12px;font-size:20px}.player{width:100%;aspect-ratio:16/9;background:#000;border-radius:10px}.muted{color:var(--muted)}.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.row>*{flex:1}.channels{display:grid;grid-template-columns:repeat(auto-fit,minmax(135px,1fr));gap:8px}.channel{padding:10px;background:#1b2b43;border-radius:8px;cursor:pointer;border:1px solid #354861}.channel:hover{border-color:var(--gold)}.channel small{display:block;color:var(--muted)}.hidden{display:none!important}.formgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px}.formgrid label{display:flex;flex-direction:column;gap:5px;color:var(--muted);font-size:14px}.formgrid input,.formgrid select,.formgrid textarea{width:100%}.formgrid .wide{grid-column:1/-1}.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px}.media-card{background:#1a2a41;padding:10px;border-radius:10px;overflow:hidden}.media-card img,.media-card video{width:100%;max-height:230px;object-fit:contain;background:#000}.bottomticker{position:sticky;bottom:0;background:#ffc857;color:#142033;overflow:hidden;white-space:nowrap;padding:8px;font-weight:800}.bottomticker span{display:inline-block;padding-left:100%;animation:scroll 30s linear infinite}
+table{width:100%;border-collapse:collapse}td,th{text-align:left;padding:8px;border-bottom:1px solid #34465e}footer{text-align:center;color:var(--muted);padding:24px}
+@media(max-width:800px){.grid{grid-template-columns:1fr}.header-right{margin-left:0;width:100%}header{align-items:flex-start}}
 </style>
 </head>
 <body>
 <header>
-  <button id="t1" class="on" onclick="tab(1)">📺 ទូរទស្សន៍ពិភពលោក</button>
-  <button id="t2" onclick="tab(2)">🎬 ស្ថានីយខ្ញុំ</button>
+<img id="logo" src="" alt="TV logo"><div><h1 id="stationTitle">Cambodia M3 TV</h1><p>ស្ថានីយទូរទស្សន៍អនឡាញ • ម៉ោងកម្ពុជា (Asia/Phnom_Penh)</p><p id="logoCaption">Cambodia M3 TV • សូមស្វាគមន៍</p><strong id="clock">កំពុងទាញម៉ោង...</strong></div>
+<div class="header-right"><span id="who" class="muted">មិនទាន់ចូលគណនី</span><button id="loginBtn">ចូល / ចុះឈ្មោះ</button><button id="logoutBtn" class="secondary hidden">ចាកចេញ</button></div>
 </header>
+<div class="ticker"><span id="topTicker">សូមស្វាគមន៍មកកាន់ស្ថានីយទូរទស្សន៍ Cambodia M3 TV • ព័ត៌មាន និងកម្មវិធីថ្មីៗ</span></div>
+<nav><button class="active" data-tab="home">ទូរទស្សន៍ផ្ទាល់</button><button data-tab="schedule">កាលវិភាគ</button><button data-tab="media">រូបថត និងអត្ថបទ</button><button data-tab="admin" id="adminNav" class="hidden">គ្រប់គ្រង Admin</button><button data-tab="account">គណនី</button><button data-tab="reports" id="reportsNav">💬 រាយការណ៍ / Chat</button></nav>
 <main>
-
-<section id="p1">
-  <div class="stage"><video id="tv" controls autoplay playsinline></video></div>
-  <p id="now"><small>ជ្រើសប៉ុស្តិ៍ខាងក្រោម</small></p>
-  <div class="row">
-    <select id="country" onchange="loadCountry()"></select>
-    <input type="search" id="q" placeholder="ស្វែងរកប៉ុស្តិ៍..." oninput="renderList()">
-  </div>
-  <div class="list" id="list"></div>
+<section id="home" class="tab">
+<div class="grid"><div>
+<div class="panel"><h2 id="nowTitle">ទូរទស្សន៍ផ្ទាល់</h2><video id="player" class="player" controls playsinline loop preload="metadata"></video><p id="playerNote" class="muted">ជ្រើសរើសប៉ុស្តិ៍ខាងក្រោម។ ប៉ុស្តិ៍ខ្លះអាចមិនដំណើរការនៅគ្រប់តំបន់ ឬលើគ្រប់ browser។</p><div class="row"><button id="playBtn">បើក / បន្ត</button><button id="muteBtn" class="secondary">សំឡេង បិទ/បើក</button><button id="stopBtn" class="secondary">បញ្ឈប់</button><button id="openStreamBtn" class="secondary">បើក stream link</button></div></div>
+<div id="approvalNotice" class="panel hidden"><h2>គណនីកំពុងរង់ចាំការអនុម័ត</h2><p>Admin ត្រូវពិនិត្យឈ្មោះ និងអនុម័តគណនីរបស់អ្នកជាមុនសិន ទើបអាចមើលទូរទស្សន៍បាន។ សូមរង់ចាំ ឬទាក់ទង Admin។</p></div><div class="panel"><h2>ប៉ុស្តិ៍អន្តរជាតិ</h2><div class="row"><input id="channelSearch" placeholder="ស្វែងរកប៉ុស្តិ៍..."><select id="region"><option value="all">ប្រទេសទាំងអស់</option><option>Cambodia</option><option>Myanmar</option><option>India</option><option>China</option><option>Taiwan</option><option>Indonesia</option><option>Hong Kong</option></select></div><div id="channels" class="channels" style="margin-top:12px"></div><p class="muted">ប្រភពបញ្ជី៖ IPTV-org public playlists. សិទ្ធិផ្សាយ និងភាពអាចប្រើបានអាស្រ័យលើអ្នកផ្តល់សេវា។</p></div><div class="panel"><h2>YouTube</h2><p class="muted">បញ្ចូលតំណ YouTube សាធារណៈ ដើម្បីមើលវីដេអូ ឬ Live ដែលអាច embed បាន។</p><div class="row"><input id="youtubeInput" type="url" placeholder="https://www.youtube.com/watch?v=..."><button id="youtubeOpen">មើល YouTube</button></div><div id="youtubePlayer" style="margin-top:12px"></div></div>
+</div><aside>
+<div class="panel"><h2>កម្មវិធីកំពុងផ្សាយ</h2><h3 id="currentProgram">សូមជ្រើសរើសកាលវិភាគ</h3><p id="programTime" class="muted">ម៉ោងកម្ពុជា</p></div>
+<div class="panel"><h2>អត្ថបទថ្មីៗ</h2><div id="sideArticles" class="muted">មិនទាន់មានអត្ថបទ។</div></div>
+<div class="panel"><h2>រូបថតថ្មីៗ</h2><div id="sidePhotos" class="cards"></div></div>
+</aside></div>
 </section>
-
-<section id="p2" class="hide">
-  <div class="stage" id="stage" oncontextmenu="return false">
-    <div id="screen"></div>
-    <div id="lg"><img id="logo" class="hide" alt=""><div id="ltxt" class="hide"></div></div>
-    <img id="ad" class="hide" alt="">
-    <img id="ovl" class="hide" alt="">
-    <div id="pt" class="hide"></div>
-    <div class="tick top hide" id="tick2"><span id="tickt2"></span></div>
-    <div class="tick hide" id="tick"><span id="tickt"></span></div>
-    <div id="shield"></div>
-  </div>
-  <div class="row">
-    <button class="btn" onclick="startST()">▶ បើក</button>
-    <button class="btn b" onclick="snd(true)">🔊 សំឡេង</button>
-    <button class="btn r" onclick="stopST()">⏹ ឈប់</button>
-    <button class="btn b" onclick="document.getElementById('stage').requestFullscreen&&document.getElementById('stage').requestFullscreen()">⛶ ពេញអេក្រង់</button>
-  </div>
-  <h3>📅 កាលវិភាគប្រចាំសប្តាហ៍</h3>
-  <div class="list" id="sched"></div>
-
-  <div class="card" style="background:#161b22;border-radius:10px;padding:10px;margin-top:12px">
-    <div class="row">
-      <input type="text" id="who" placeholder="បញ្ចូល Gmail របស់អ្នកដើម្បីចុះឈ្មោះ" autocomplete="off">
-      <button class="btn" onclick="join()">បើក</button>
-    </div>
-    <small id="msg">ការចុះឈ្មោះរក្សាទុកតែ Gmail របស់អ្នកលើឧបករណ៍នេះប៉ុណ្ណោះ។</small>
-  </div>
-
-  <div id="adm" class="hide">
-  <p><small id="store">💾 កំពុងពិនិត្យទំហំផ្ទុក...</small></p>
-  <p><small id="stats"></small></p>
-  <div class="row">
-    <button class="btn b" onclick="exportBK()">💾 បម្រុងទុក (Export)</button>
-    <button class="btn" onclick="document.getElementById('bk').click()">📂 ស្ដារ (Import)</button>
-    <input type="file" id="bk" accept=".tvbackup" class="hide" onchange="importBK(this)">
-  </div>
-
-  <h3>🏷️ Logo ស្ថានីយ</h3>
-  <input type="file" accept="image/*" onchange="setLogo(this)">
-  <h3>✍️ អក្សរក្រោម Logo (មានចលនាមុខ-ក្រោយ)</h3>
-  <input type="text" id="ltx" placeholder="សរសេរអត្ថបទក្រោម Logo..." oninput="setLtxt()" style="width:100%">
-
-  <h3>🗂️ មាតិកា</h3>
-  <div class="row"><small>ប្រភេទសម្រាប់ឯកសារថ្មី:</small><select id="cat"></select></div>
-  <div class="row"><small>បង្ហាញ/ចាក់តែប្រភេទ:</small><select id="fcat" onchange="draw()"></select></div>
-
-  <h3>🖼️ រូបថត / 🎞️ វីដេអូ ពីទូរស័ព្ទ</h3>
-  <input type="file" accept="image/*,video/*" multiple onchange="addFiles(this)">
-  <div class="row"><input type="number" id="dur" value="8" min="2"><small style="align-self:center">វិនាទី/រូបថត</small></div>
-
-  <h3>▶️ តំណ YouTube</h3>
-  <div class="row">
-    <input type="text" id="yt" placeholder="https://youtube.com/watch?v=...">
-    <input type="number" id="ytd" value="60" min="5" title="រយៈពេល(វិនាទី)">
-    <button class="btn b" onclick="addYT()">បន្ថែម</button>
-  </div>
-  <div class="items" id="items"></div>
-
-  <h3>📢 ពាណិជ្ជកម្ម (រូបថត)</h3>
-  <input type="file" accept="image/*" multiple onchange="addAds(this)">
-  <div class="items" id="ads"></div>
-
-  <h3>📝 អក្សរហូរទី ១ (ខាងក្រោម)</h3>
-  <textarea id="txt" rows="2" placeholder="សរសេរអត្ថបទអក្សរហូរទី ១..." oninput="setTick()"></textarea>
-  <div class="row"><small>ទំហំអក្សរ:</small><select id="sz1" onchange="setTick()"><option value="s">តូច</option><option value="m">មធ្យម</option><option value="l">ធំ</option></select></div>
-
-  <h3>📝 អក្សរហូរទី ២ (ខាងលើ)</h3>
-  <textarea id="txt2" rows="2" placeholder="សរសេរអត្ថបទអក្សរហូរទី ២..." oninput="setTick()"></textarea>
-  <div class="row"><small>ទំហំអក្សរ:</small><select id="sz2" onchange="setTick()"><option value="s">តូច</option><option value="m">មធ្យម</option><option value="l">ធំ</option></select></div>
-  <div class="row"><small>ល្បឿនអក្សរហូរ (វិនាទី):</small><input type="number" id="spd" value="15" min="4" oninput="setTick()"></div>
-
-  <h3>🖼️ រូបថតលើវិដេអូ</h3>
-  <div class="row"><input type="file" accept="image/*" onchange="setOvl(this)"><button class="btn r" onclick="clearOvl()">លុបរូប</button></div>
-
-  <h3>🗓️ បន្ថែមកាលវិភាគ</h3>
-  <div class="row"><select id="sd"></select><input type="time" id="stm" value="08:00"></div>
-  <div class="row"><input type="text" id="sti" placeholder="ចំណងជើងកម្មវិធី"></div>
-  <div class="row"><select id="si"></select><button class="btn" onclick="addSch()">បន្ថែម</button></div>
-  <small>វិដេអូចាក់តាមលំដាប់ ថ្ងៃ+ម៉ោង (ច័ន្ទ→អាទិត្យ) ចប់មួយបន្តមួយ ហើយត្រឡប់ទៅច័ន្ទវិញ។ ចាប់ផ្តើមពីកម្មវិធីដែលត្រូវនឹងម៉ោងបច្ចុប្បន្ន។</small>
-  <div class="row"><label><input type="checkbox" id="clk" onchange="setClk()"> ⏰ ចាក់តាមម៉ោងពិត (ដល់ម៉ោងកំណត់ ប្តូរកម្មវិធីភ្លាម ហើយចាក់ឡើងវិញរហូតដល់ម៉ោងបន្ទាប់)</label></div>
-
-  <h3>👥 អ្នកចុះឈ្មោះ (លើឧបករណ៍នេះ)</h3>
-  <button class="btn b" onclick="showUsers()">បង្ហាញបញ្ជី</button>
-  <div class="list" id="users"></div>
-  </div>
+<section id="schedule" class="tab hidden"><div class="panel"><h2>កាលវិភាគ ច័ន្ទ–អាទិត្យ (ម៉ោងកម្ពុជា)</h2><p class="muted">អ្នកប្រើដែលបានចូលគណនីអាចមើលកាលវិភាគវីដេអូ។ Admin អាចបន្ថែមកម្មវិធី និងកាលវិភាគ។</p><div class="row"><select id="dayFilter"><option value="all">គ្រប់ថ្ងៃ</option><option value="1">ច័ន្ទ</option><option value="2">អង្គារ</option><option value="3">ពុធ</option><option value="4">ព្រហស្បតិ៍</option><option value="5">សុក្រ</option><option value="6">សៅរ៍</option><option value="0">អាទិត្យ</option></select></div><div id="scheduleList"></div></div></section>
+<section id="media" class="tab hidden"><div class="panel"><h2>អត្ថបទ និងរូបថត</h2><div id="mediaList" class="cards"></div></div></section>
+<section id="admin" class="tab hidden"><div class="panel"><h2>ផ្ទាំង Admin</h2><p class="muted">Admin ចូលដោយឈ្មោះ phengchen888 និងពាក្យសម្ងាត់ក្នុង .env; មិនចាំបាច់ Gmail ទេ។</p>
+<div class="formgrid"><label>ឈ្មោះស្ថានីយ<input id="editStation" placeholder="Cambodia M3 TV"></label><label>ចំណងជើងអត្ថបទហូរខាងលើ<input id="editTop" placeholder="ព័ត៌មានថ្មីៗ..."></label><label>អត្ថបទហូរខាងក្រោម<input id="editBottom" placeholder="សូមស្វាគមន៍..."></label><label>អត្ថបទផ្ទាល់ខ្លួនក្រោម Logo<input id="editLogoCaption" placeholder="សរសេរអត្ថបទផ្ទាល់ខ្លួន..."></label><label>ចលនាអត្ថបទខាងក្រោម<select id="tickerMotion"><option value="bounce-fade">ទៅមុខក្រោយ និងបាត់មកវិញ</option><option value="scroll">រត់ទៅមុខជុំវិញ</option><option value="pulse">រំកិល និងបង្ហាញបាត់</option></select></label><label>បង្ហោះ Logo ពីទូរស័ព្ទ<input id="logoFile" type="file" accept="image/*"></label><div><button id="saveBrand">រក្សាទុកការកំណត់</button></div></div></div>
+<div class="panel"><h2>បង្ហោះរូបថត / វីដេអូ / អត្ថបទ</h2><form id="postForm" class="formgrid"><label>ប្រភេទ<select name="type"><option value="article">អត្ថបទ</option><option value="photo">រូបថត</option><option value="video">វីដេអូ</option><option value="youtube">តំណ YouTube</option></select></label><label>ប្រភេទមាតិកា<select name="category"><option value="documentary">ឯកសារ</option><option value="animals">សត្វ</option><option value="series">រឿងភាគ</option><option value="comedy">ប្លុកកំប្លែង</option><option value="movie">ភាពយន្ត</option><option value="cartoon">តុក្កតា</option><option value="entertainment">កម្សាន្ត</option><option value="recap">សម្រាយរឿង</option><option value="other">ផ្សេងៗ</option></select></label><label>ចំណងជើង<input name="title" required></label><label class="wide">អត្ថបទ / ពិពណ៌នា<textarea name="body" rows="3"></textarea></label><label class="wide">តំណវីដេអូផ្ទាល់ (MP4/WebM/HLS; ប្រើពេលមិនបង្ហោះឯកសារ)<input name="mediaUrl" type="url" placeholder="https://example.com/video.mp4"></label><label class="wide">YouTube URL (ប្រើពេលជ្រើសប្រភេទ YouTube)<input name="youtubeUrl" type="url" placeholder="https://youtu.be/..."></label><label class="wide">ឯកសាររូបថត ឬវីដេអូ<input name="file" type="file" accept="image/*,video/*"></label><button type="submit">បង្ហោះ</button></form></div>
+<div class="panel"><h2>បន្ថែមកាលវិភាគកម្មវិធី</h2><form id="scheduleForm" class="formgrid"><label>ចំណងជើងកម្មវិធី<input name="title" required></label><label>ថ្ងៃ<select name="day"><option value="1">ច័ន្ទ</option><option value="2">អង្គារ</option><option value="3">ពុធ</option><option value="4">ព្រហស្បតិ៍</option><option value="5">សុក្រ</option><option value="6">សៅរ៍</option><option value="0">អាទិត្យ</option></select></label><label>ម៉ោងចាប់ផ្តើម (កម្ពុជា)<input name="start" type="time" required></label><label>ម៉ោងបញ្ចប់<input name="end" type="time" required></label><label>ប្រភេទ<select name="kind"><option value="program">កម្មវិធីទូទៅ</option><option value="video">កាលវិភាគវីដេអូ</option></select></label><label>ប្រភេទមាតិកា<select name="category"><option value="documentary">ឯកសារ</option><option value="animals">សត្វ</option><option value="series">រឿងភាគ</option><option value="comedy">ប្លុកកំប្លែង</option><option value="movie">ភាពយន្ត</option><option value="cartoon">តុក្កតា</option><option value="entertainment">កម្សាន្ត</option><option value="recap">សម្រាយរឿង</option><option value="other">ផ្សេងៗ</option></select></label><label>វីដេអូដែលបានបង្ហោះ<select name="postId" id="schedulePost"><option value="">មិនជ្រើស</option></select></label><label>Stream URL (ជាជម្រើស)<input name="streamUrl" type="url" placeholder="https://...m3u8 ឬ MP4"></label><button type="submit">បន្ថែមកាលវិភាគ</button></form><div id="adminSchedule"></div></div><div class="panel"><h2>គណនីរង់ចាំអនុម័ត</h2><div id="pendingUsers"></div></div>
 </section>
+<section id="reports" class="tab hidden"><div class="panel"><h2>💬 រាយការណ៍ / Chat ជាមួយ Admin</h2><p class="muted">សូមចូលគណនី Gmail/អ៊ីមែល ដើម្បីផ្ញើសាររាយការណ៍ ឬស្នើសុំជំនួយ។ សាររបស់អ្នកនឹងឃើញដោយអ្នក និង Admin ប៉ុណ្ណោះ។</p><form id="reportForm" class="formgrid"><label class="wide">ប្រធានបទ<input name="subject" maxlength="180" placeholder="ឧ. ប៉ុស្តិ៍មិនដំណើរការ"></label><label class="wide">សរសេរសារ<textarea name="message" rows="4" required maxlength="4000" placeholder="សរសេរបញ្ហា ឬសំណើរបស់អ្នក..."></textarea></label><button type="submit">ផ្ញើសារ</button><button type="button" id="refreshReports" class="secondary">ធ្វើបច្ចុប្បន្នភាពសារ</button></form><div id="reportStatus" class="muted"></div><div id="reportList"></div></div></section>
+<section id="account" class="tab hidden"><div class="panel"><h2>គណនី</h2><p id="accountInfo" class="muted">ចូលគណនីដើម្បីប្រើមុខងារកាលវិភាគវីដេអូ។</p><p>អាចចុះឈ្មោះដោយអ៊ីមែល ឬប្រើ Google Sign-In (ត្រូវកំណត់ GOOGLE_CLIENT_ID)។ អ៊ីមែល Gmail មិនត្រូវបានទទួលស្គាល់ដោយគ្រាន់តែវាយអាសយដ្ឋានទេ—Google Sign-In ជាវិធីផ្ទៀងផ្ទាត់។</p></div></section>
 </main>
-
+<div class="bottomticker"><span id="bottomTicker">Cambodia M3 TV • សូមអរគុណដែលទស្សនា • ម៉ោងកម្ពុជា</span></div><footer>© <span id="year"></span> Cambodia M3 TV • សូមគោរពសិទ្ធិអ្នកបង្កើតមាតិកា</footer>
+<dialog id="authDialog"><form id="authForm" method="dialog"><h2 id="authHeading">ចូលគណនី / ចុះឈ្មោះ</h2><div class="formgrid"><label id="nameField">ឈ្មោះពេញ<input name="name" required autocomplete="name" placeholder="ឈ្មោះសម្រាប់ Admin ពិនិត្យ"></label><label id="usernameField" class="hidden">ឈ្មោះ Admin<input name="username" autocomplete="username" value="phengchen888"></label><label>អ៊ីមែល<input name="email" type="email" required autocomplete="email"></label><label>ពាក្យសម្ងាត់<input name="password" type="password" required minlength="8" autocomplete="current-password"></label><label>សកម្មភាព<select name="action"><option value="login">ចូលគណនី Gmail/អ៊ីមែល</option><option value="register">ចុះឈ្មោះ</option><option value="admin-login">ចូលជា Admin (phengchen888)</option></select></label></div><p id="authError" style="color:#ff8b8b"></p><div class="row"><button type="button" id="authSubmit">បន្ត</button><button type="button" id="googleBtn" class="secondary">Google Sign-In</button><button type="button" id="closeAuth" class="secondary">បិទ</button></div><p class="muted">Google Sign-In ត្រូវការកំណត់ GOOGLE_CLIENT_ID និង client ID នៅក្នុង index.html។</p></form></dialog>
+<script src="name.js"></script>
 <script>
-const $=id=>document.getElementById(id);
-const C={kh:'🇰🇭 កម្ពុជា',cn:'🇨🇳 ចិន',vn:'🇻🇳 វៀតណាម',la:'🇱🇦 ឡាវ',mm:'🇲🇲 មីយ៉ាន់ម៉ា',sg:'🇸🇬 សិង្ហបុរី',jp:'🇯🇵 ជប៉ុន',kr:'🇰🇷 កូរ៉េខាងត្បូង',kp:'🇰🇵 កូរ៉េខាងជើង',us:'🇺🇸 សហរដ្ឋអាមេរិក',ru:'🇷🇺 រុស្ស៊ី',ua:'🇺🇦 អ៊ុយក្រែន',sy:'🇸🇾 ស៊ីរី',za:'🇿🇦 អាហ្វ្រិកខាងត្បូង',iq:'🇮🇶 អ៊ីរ៉ាក់',ir:'🇮🇷 អ៊ីរ៉ង់',il:'🇮🇱 អ៊ីស្រាអែល',se:'🇸🇪 ស៊ុយអែត',in:'🇮🇳 ឥណ្ឌា',tw:'🇹🇼 តៃវ៉ាន់',id:'🇮🇩 ឥណ្ឌូនេស៊ី',ph:'🇵🇭 ហ្វីលីពីន',my:'🇲🇾 ម៉ាឡេស៊ី',eng:'🇬🇧 អង់គ្លេស (ភាសា)',es:'🇪🇸 អេស្ប៉ាញ',qa:'🇶🇦 កាតា'};
-const SRV={kh:'cambodia',mm:'myanmar',in:'indian',cn:'chinese',tw:'taiwan',id:'indonesia',ru:'russian',ph:'philippines',my:'malaysian',jp:'japanese',us:'america',eng:'english',es:'spain',ua:'ukraine',ir:'iran',iq:'iraq',qa:'qatar',vn:'vietnam',la:'laos',sg:'singapore',kr:'southkorea',kp:'northkorea',sy:'syria',za:'southafrica',il:'israel',se:'sweden'};
-$('country').innerHTML=Object.entries(C).map(([k,v])=>`<option value="${k}">${v}</option>`).join('');
-let chans=[],hls;
-function tab(n){$('p1').classList.toggle('hide',n!=1);$('p2').classList.toggle('hide',n!=2);$('t1').classList.toggle('on',n==1);$('t2').classList.toggle('on',n==2);if(n==2)$('tv').pause()}
+const $=s=>document.querySelector(s);let me=null,channels=[],schedules=[],posts=[],brand={};
+const days=['អាទិត្យ','ច័ន្ទ','អង្គារ','ពុធ','ព្រហស្បតិ៍','សុក្រ','សៅរ៍'];
+async function api(url,opts={}){const r=await fetch(url,{...opts,headers:{...(opts.headers||{}),...(opts.body instanceof FormData?{}:{'Content-Type':'application/json'})}});const d=await r.json().catch(()=>({}));if(!r.ok)throw Error(d.error||'មានបញ្ហា');return d}
+function say(err){alert(err.message||String(err))}
+function showTab(tab){document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('hidden',x.id!==tab));document.querySelectorAll('nav button[data-tab]').forEach(x=>x.classList.toggle('active',x.dataset.tab===tab));}
+document.querySelectorAll('nav button[data-tab]').forEach(b=>b.onclick=()=>{showTab(b.dataset.tab);if(b.dataset.tab==='reports')loadReports();if(b.dataset.tab==='admin')renderPendingUsers()});
+function timeNow(){const d=new Date();$('#clock').textContent=new Intl.DateTimeFormat('km-KH',{timeZone:'Asia/Phnom_Penh',dateStyle:'full',timeStyle:'medium'}).format(d)}
+setInterval(timeNow,1000);timeNow();$('#year').textContent=new Date().getFullYear();
+async function load(){try{const [s,p,b,c,u]=await Promise.all([api('/api/schedules'),api('/api/posts'),api('/api/brand'),api('/api/channels'),api('/api/me')]);schedules=s;posts=p;brand=b;channels=c.channels||[];me=u.user;render();if(!$('#reports').classList.contains('hidden'))loadReports()}catch(e){console.error(e)}}
+function render(){ $('#stationTitle').textContent=brand.stationName||'Cambodia M3 TV';$('#topTicker').textContent=brand.topTicker||'សូមស្វាគមន៍មកកាន់ Cambodia M3 TV';$('#bottomTicker').textContent=brand.bottomTicker||'ព័ត៌មាន និងកម្មវិធីថ្មីៗ';document.querySelector('.bottomticker').className='bottomticker motion-'+(brand.tickerMotion||'bounce-fade');$('#logoCaption').textContent=brand.logoCaption||'Cambodia M3 TV • សូមស្វាគមន៍';$('#editLogoCaption').value=brand.logoCaption||'';$('#tickerMotion').value=brand.tickerMotion||'bounce-fade';if(brand.logoUrl)$('#logo').src=brand.logoUrl;
+$('#who').textContent=me?`${me.name||me.email} (${me.role==='admin'?'Admin':me.approved?'បានអនុម័ត':'រង់ចាំអនុម័ត'})`:'មិនទាន់ចូលគណនី';$('#approvalNotice').classList.toggle('hidden',!me||me.role==='admin'||me.approved);$('#logoutBtn').classList.toggle('hidden',!me);$('#adminNav').classList.toggle('hidden',!me||me.role!=='admin');$('#accountInfo').textContent=me?`បានចូលជា ${me.name||me.email||me.username}។ ${me.role==='admin'?'អ្នកមានសិទ្ធិគ្រប់គ្រង។':me.approved?'អាចមើលកាលវិភាគវីដេអូបាន។':'គណនីកំពុងរង់ចាំ Admin អនុម័ត។'}`:'ចូលគណនីដើម្បីមើលកាលវិភាគវីដេអូ។';
+renderChannels();renderSchedule();renderPosts();renderSide();renderAdminSchedule();renderPendingUsers();renderSchedulePostOptions()}
+function renderChannels(){if(me&&me.role!=='admin'&&!me.approved){$('#channels').innerHTML='<p class="muted">គណនីមិនទាន់បានអនុម័ត។</p>';return}const q=$('#channelSearch').value.toLowerCase(),reg=$('#region').value;$('#channels').innerHTML='';channels.filter(c=>(reg==='all'||c.country===reg)&&(`${c.name} ${c.country}`).toLowerCase().includes(q)).forEach(c=>{const d=document.createElement('div');d.className='channel';d.innerHTML=`<strong>${esc(c.name)}</strong><small>${esc(c.country)}</small>`;d.onclick=()=>play(c);$('#channels').append(d)})}
+let activeMediaKey='';function play(c){if(!c||!c.url)return;activeMediaKey=c.key||c.url;$('#nowTitle').textContent=c.name;const v=$('#player');v.onended=null;v.loop=c.loop!==false;v.src=c.url;v.load();v.play().catch(()=>{});$('#playerNote').textContent='កំពុងចាក់ '+c.name+' • វីដេអូដែលបង្ហោះផ្ទាល់មិនមានអក្សរបន្ថែមលើរូបភាពទេ';$('#openStreamBtn').onclick=()=>window.open(c.url,'_blank','noopener');}
+function youtubeId(url){try{const u=new URL(url);if(u.hostname==='youtu.be')return u.pathname.slice(1).split('/')[0];if(['youtube.com','www.youtube.com','m.youtube.com','youtube-nocookie.com','www.youtube-nocookie.com'].includes(u.hostname)){if(u.pathname==='/watch')return u.searchParams.get('v');if(u.pathname.startsWith('/embed/'))return u.pathname.split('/')[2];if(u.pathname.startsWith('/live/'))return u.pathname.split('/')[2]}return null}catch{return null}}
+$('#youtubeOpen').onclick=()=>{const id=youtubeId($('#youtubeInput').value.trim());if(!id){alert('សូមបញ្ចូលតំណ YouTube ត្រឹមត្រូវ');return}$('#youtubePlayer').innerHTML=`<iframe width="100%" style="aspect-ratio:16/9;border:0" src="https://www.youtube-nocookie.com/embed/${esc(id)}" title="YouTube player" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>`};
+$('#playBtn').onclick=()=>{if(!$('#player').src){alert('សូមជ្រើសរើសប៉ុស្តិ៍ ឬវីដេអូមុន');return}$('#player').play().catch(()=>alert('វីដេអូនេះមិនអាចចាក់បានទេ ឬត្រូវការចុចបើកដោយដៃ។'))};$('#muteBtn').onclick=()=>{$('#player').muted=!$('#player').muted;$('#muteBtn').textContent=$('#player').muted?'បើកសំឡេង':'បិទសំឡេង'};$('#stopBtn').onclick=()=>{$('#player').pause();$('#player').removeAttribute('src');$('#player').load()};$('#channelSearch').oninput=renderChannels;$('#region').onchange=renderChannels;
+function renderSchedule(){let arr=schedules.filter(s=>$('#dayFilter').value==='all'||String(s.day)===$('#dayFilter').value);if(!me)arr=arr.filter(s=>s.kind!=='video');$('#scheduleList').innerHTML=arr.length?arr.sort((a,b)=>a.day-b.day||a.start.localeCompare(b.start)).map(s=>`<div class="media-card" style="margin:8px 0"><strong>${esc(s.title)}</strong><p>${days[s.day]} • ${esc(s.start)}–${esc(s.end)} (ម៉ោងកម្ពុជា) ${s.kind==='video'?'• វីដេអូ':''}</p>${s.streamUrl?`<button onclick="play({name:${JSON.stringify(s.title)},url:${JSON.stringify(s.streamUrl)},loop:true})">មើល</button>`:''}</div>`).join(''):'<p class="muted">មិនមានកាលវិភាគ ឬត្រូវចូលគណនីដើម្បីមើលកាលវិភាគវីដេអូ។</p>'}
+$('#dayFilter').onchange=renderSchedule;
+function categoryLabel(c){return ({documentary:'ឯកសារ',animals:'សត្វ',series:'រឿងភាគ',comedy:'ប្លុកកំប្លែង',movie:'ភាពយន្ត',cartoon:'តុក្កតា',entertainment:'កម្សាន្ត',recap:'សម្រាយរឿង',other:'ផ្សេងៗ'})[c]||c||'មាតិកា'}
+function renderPosts(){const html=posts.map(p=>`<article class="media-card"><small class="muted">${esc(categoryLabel(p.category))}</small>${p.type==='youtube'&&p.youtubeId?`<iframe width="100%" style="aspect-ratio:16/9;border:0" src="https://www.youtube-nocookie.com/embed/${esc(p.youtubeId)}" title="${esc(p.title)}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen loading="lazy"></iframe>`:(p.fileUrl||p.mediaUrl)?(p.type==='video'?`<video controls loop playsinline src="${esc(p.fileUrl||p.mediaUrl||'')}"></video>`:`<img src="${esc(p.fileUrl)}" alt="">`):''}<h3>${esc(p.title)}</h3><p>${esc(p.body||'')}</p><small class="muted">${esc(p.type)} • ${new Date(p.createdAt).toLocaleDateString('km-KH',{timeZone:'Asia/Phnom_Penh'})}</small>${me?.role==='admin'?`<p><button class="danger" onclick="deletePost('${p.id}')">លុបមាតិកា (Admin)</button></p>`:''}</article>`).join('')||'<p class="muted">មិនទាន់មានមាតិកា។</p>';$('#mediaList').innerHTML=html}
+function renderSide(){$('#sideArticles').innerHTML=posts.filter(p=>p.type==='article').slice(0,4).map(p=>`<p><strong>${esc(p.title)}</strong><br>${esc((p.body||'').slice(0,130))}</p>`).join('')||'មិនទាន់មានអត្ថបទ។';$('#sidePhotos').innerHTML=posts.filter(p=>p.type==='photo'&&p.fileUrl).slice(0,4).map(p=>`<div class="media-card"><img src="${esc(p.fileUrl)}" alt=""><small>${esc(p.title)}</small></div>`).join('')}
+async function renderPendingUsers(){const box=$('#pendingUsers');if(!box)return;if(me?.role!=='admin'){box.innerHTML='';return}try{const data=await api('/api/admin/users');const pending=data.users.filter(u=>!u.approved&&u.role!=='admin');box.innerHTML=pending.length?pending.map(u=>`<div class="row" style="margin:8px 0"><span><strong>${esc(u.name||'មិនមានឈ្មោះ')}</strong><br><small>${esc(u.email)}</small></span><button onclick="approveUser('${u.id}')">អនុម័ត</button></div>`).join(''):'<p class="muted">មិនមានសំណើរង់ចាំទេ។</p>'}catch(e){box.innerHTML='<p class="muted">មិនអាចទាញបញ្ជីអ្នកប្រើបាន។</p>'}}
+window.approveUser=async id=>{try{await api('/api/admin/users/'+id+'/approve',{method:'POST',body:'{}'});await renderPendingUsers();alert('បានអនុម័តគណនី')}catch(e){say(e)}};
+async function loadReports(){const box=$('#reportList');if(!box)return;if(!me){box.innerHTML='<p class="muted">សូមចូលគណនីជាមុន ដើម្បីផ្ញើ និងអានសាររបស់អ្នក។</p>';return}try{const items=await api('/api/reports');box.innerHTML=items.length?items.map(r=>`<article class="media-card" style="margin:10px 0"><strong>${esc(r.subject)}</strong><p><small>${esc(r.userName)} ${r.userEmail?'• '+esc(r.userEmail):''} • ${new Date(r.createdAt).toLocaleString('km-KH',{timeZone:'Asia/Phnom_Penh'})}</small></p><p style="white-space:pre-wrap">${esc(r.message)}</p>${(r.replies||[]).map(x=>`<div style="margin:8px 0;padding:10px;border-left:3px solid var(--gold)"><strong>Admin ឆ្លើយតប</strong><p style="white-space:pre-wrap">${esc(x.message)}</p><small>${new Date(x.createdAt).toLocaleString('km-KH',{timeZone:'Asia/Phnom_Penh'})}</small></div>`).join('')}${me.role==='admin'?`<form class="replyForm formgrid" data-id="${r.id}"><label class="wide">ឆ្លើយតប<input name="message" required maxlength="4000" placeholder="សរសេរចម្លើយទៅអ្នកប្រើ"></label><button type="submit">ឆ្លើយតប</button></form>`:''}</article>`).join(''):'<p class="muted">មិនទាន់មានសាររាយការណ៍ទេ។</p>';box.querySelectorAll('.replyForm').forEach(form=>form.onsubmit=async e=>{e.preventDefault();try{await api('/api/reports/'+form.dataset.id+'/reply',{method:'POST',body:JSON.stringify({message:new FormData(form).get('message')})});await loadReports()}catch(err){say(err)}})}catch(e){box.innerHTML=`<p class="muted">${esc(e.message)}</p>`}}
+$('#reportForm').onsubmit=async e=>{e.preventDefault();if(!me){say('សូមចូលគណនីជាមុន');return}try{const f=new FormData(e.target);await api('/api/reports',{method:'POST',body:JSON.stringify({subject:f.get('subject'),message:f.get('message')})});e.target.reset();$('#reportStatus').textContent='បានផ្ញើសារ។ Admin អាចមើល និងឆ្លើយតបបាន។';await loadReports()}catch(err){say(err)}};
+$('#refreshReports').onclick=loadReports;
+window.deletePost=async id=>{if(me?.role!=='admin')return say('មានតែ Admin ទេដែលអាចលុបមាតិកាបាន');if(!confirm('លុបវីដេអូ/មាតិកានេះមែនទេ?'))return;try{await api('/api/posts/'+id,{method:'DELETE',body:'{}'});await load()}catch(e){say(e)}};
 
-async function loadCountry(){
-  $('list').innerHTML='<div>កំពុងផ្ទុក...</div>';
-  try{
-    const k=$('country').value;let r=null;
-    if(SRV[k]&&location.protocol.startsWith('http')){try{r=await fetch(`/playlist/${SRV[k]}.m3u8`);if(!r.ok)r=null}catch(e){r=null}}
-    if(!r){r=await fetch(`https://iptv-org.github.io/iptv/${k=='eng'?'languages':'countries'}/${k}.m3u`)}
-    if(!r.ok)throw 0;
-    const L=(await r.text()).split('\n');chans=[];
-    for(let i=0;i<L.length;i++){
-      if(L[i].startsWith('#EXTINF')){
-        const name=L[i].split(',').pop().trim();
-        let j=i+1;while(L[j]&&L[j].startsWith('#'))j++;
-        if(L[j]&&L[j].startsWith('http'))chans.push({name,url:L[j].trim()});
-      }
-    }
-  }catch(e){chans=[]}
-  renderList();
-}
-function renderList(){
-  const q=$('q').value.toLowerCase();
-  const f=chans.filter(c=>c.name.toLowerCase().includes(q));
-  $('list').innerHTML=f.length?'':'<div>គ្មានប៉ុស្តិ៍ទេ</div>';
-  f.forEach(c=>{const d=document.createElement('div');d.textContent='📺 '+c.name;d.onclick=()=>play(c);$('list').appendChild(d)});
-}
-function play(c){
-  const v=$('tv');$('now').innerHTML='កំពុងចាក់: <b></b>';$('now').querySelector('b').textContent=c.name;
-  if(hls){hls.destroy();hls=null}
-  if(Hls.isSupported()){hls=new Hls();hls.loadSource(c.url);hls.attachMedia(v);hls.on(Hls.Events.ERROR,(e,d)=>{if(d.fatal)$('now').innerHTML='<small>⚠️ ប៉ុស្តិ៍នេះមិនអាចចាក់បាន សូមសាកល្បងប៉ុស្តិ៍ផ្សេង</small>'})}
-  else v.src=c.url;
-  v.play().catch(()=>{});
-}
-loadCountry();
-
-/* ===== ស្ថានីយខ្ញុំ ===== */
-let items=[],ads=[],timer,adTimer,idx=0,running=false;
-function setLogo(i){if(!isAdm())return;const f=i.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{$('logo').src=r.result;$('logo').classList.remove('hide');try{localStorage.setItem('logo',r.result)}catch(e){}};r.readAsDataURL(f)}
-
-/* ---- ឃ្លាំងផ្ទុកអចិន្ត្រៀយ៍ (IndexedDB) ---- */
-let db;
-const idb=(mode,fn)=>new Promise((res,rej)=>{const q=fn(db.transaction('m',mode).objectStore('m'));q.onsuccess=()=>res(q.result);q.onerror=()=>rej(q.error)});
-const dbPut=o=>idb('readwrite',s=>s.add(o)), dbDel=id=>idb('readwrite',s=>s.delete(id)), dbAll=()=>idb('readonly',s=>s.getAll()), dbSet=o=>idb('readwrite',s=>s.put(o));
-async function saveFiles(files,kind){if(!isAdm())return;
-  for(const f of files){
-    const o={kind,type:kind=='ad'?'img':f.type.startsWith('video')?'vid':'img',name:f.name,blob:f,cat:kind=='ad'?'':$('cat').value};
-    try{o.id=await dbPut(o)}catch(e){alert('⚠️ ទំហំផ្ទុកពេញ ឬមិនអាចរក្សាទុក៖ '+f.name);continue}
-    const v={id:o.id,type:o.type,name:o.name,cat:o.cat,src:URL.createObjectURL(f)};
-    (kind=='ad'?ads:items).push(v);
-  }
-  draw();showStore();
-}
-function addFiles(i){const f=[...i.files];i.value='';saveFiles(f,'item')}
-function addAds(i){const f=[...i.files];i.value='';saveFiles(f,'ad')}
-async function showStore(){
-  try{
-    const e=await navigator.storage.estimate(),p=navigator.storage.persisted?await navigator.storage.persisted():false;
-    const g=n=>n>=1e9?(n/1e9).toFixed(2)+' GB':(n/1e6).toFixed(1)+' MB';
-    $('store').textContent=`💾 ប្រើ ${g(e.usage)} / អាចប្រើបាន ${g(e.quota)} · ការការពារមិនឲ្យលុប៖ ${p?'✅ បើក':'⚠️ មិនទាន់បើក'}`;
-  }catch(e){$('store').textContent='💾 កម្មវិធីរុករកនេះមិនបង្ហាញទំហំផ្ទុក'}
-}
-/* ---- បម្រុងទុក / ស្ដារ (.tvbackup) ---- */
-const enc=new TextEncoder(),dec=new TextDecoder();
-async function exportBK(){if(!isAdm())return;
-  try{
-    const all=(await dbAll()).sort((a,b)=>a.id-b.id);
-    const parts=[enc.encode('TVBK1')];
-    const push=(h,b)=>{const hb=enc.encode(JSON.stringify(h)),n=new Uint8Array(4);new DataView(n.buffer).setUint32(0,hb.length);parts.push(n,hb);if(b)parts.push(b)};
-    const meta={kind:'meta',size:0};try{['logo','txt','txt2','sz1','sz2','spd','ovl','sched','clk','ltxt'].forEach(k=>meta[k]=localStorage.getItem(k)||'')}catch(e){}
-    push(meta);
-    all.forEach(o=>push(o.blob?{kind:o.kind,type:o.type,name:o.name,size:o.blob.size,mime:o.blob.type,cat:o.cat,hidden:o.hidden}:{kind:o.kind,type:'yt',name:o.name,src:o.src,dur:o.dur,size:0,cat:o.cat},o.blob));
-    const name='tv-backup-'+new Date().toISOString().slice(0,10)+'.tvbackup';
-    if(window.showSaveFilePicker){
-      const fh=await showSaveFilePicker({suggestedName:name}),w=await fh.createWritable();
-      for(const p of parts)await w.write(p);
-      await w.close();
-    }else{
-      const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(parts));a.download=name;a.click();
-      setTimeout(()=>URL.revokeObjectURL(a.href),120000);
-    }
-    alert('✅ បម្រុងទុកបានជោគជ័យ');
-  }catch(e){if(e.name!='AbortError')alert('⚠️ បម្រុងទុកមិនបាន៖ '+e.message)}
-}
-async function importBK(i){if(!isAdm())return;
-  const f=i.files[0];i.value='';if(!f)return;
-  try{
-    if(dec.decode(await f.slice(0,5).arrayBuffer())!='TVBK1')throw new Error('ឯកសារមិនត្រឹមត្រូវ');
-    const have=new Set((await dbAll()).map(o=>[o.kind,o.name,o.blob?o.blob.size:o.src].join('|')));
-    let off=5,n=0;
-    while(off<f.size){
-      const len=new DataView(await f.slice(off,off+4).arrayBuffer()).getUint32(0);off+=4;
-      const h=JSON.parse(dec.decode(await f.slice(off,off+len).arrayBuffer()));off+=len;
-      if(h.kind=='meta'){
-        try{['logo','txt','txt2','sz1','sz2','spd','ovl','sched','clk','ltxt'].forEach(k=>h[k]&&localStorage.setItem(k,h[k]));loadSettings()}catch(e){}
-        continue;
-      }
-      const blob=h.size?f.slice(off,off+h.size,h.mime):null;off+=h.size;
-      const key=[h.kind,h.name,h.size?h.size:h.src].join('|');
-      if(have.has(key))continue;
-      const o=blob?{kind:h.kind,type:h.type,name:h.name,blob,cat:h.cat,hidden:h.hidden}:{kind:h.kind,type:'yt',name:h.name,src:h.src,dur:h.dur,cat:h.cat};
-      o.id=await dbPut(o);have.add(key);n++;
-      const v=blob?{id:o.id,type:o.type,name:o.name,cat:o.cat,hidden:o.hidden,src:URL.createObjectURL(blob)}:{id:o.id,type:'yt',src:o.src,name:o.name,dur:o.dur,cat:o.cat};
-      (o.kind=='ad'?ads:items).push(v);
-    }
-    draw();showStore();alert('✅ ស្ដារបាន '+n+' ធាតុថ្មី');
-  }catch(e){alert('⚠️ ស្ដារមិនបាន៖ '+e.message)}
-}
-async function init(){
-  try{
-    await new Promise((res,rej)=>{const r=indexedDB.open('tvstation',1);r.onupgradeneeded=()=>r.result.createObjectStore('m',{keyPath:'id',autoIncrement:true});r.onsuccess=()=>{db=r.result;res()};r.onerror=()=>rej(r.error)});
-    try{if(navigator.storage&&navigator.storage.persist)await navigator.storage.persist()}catch(e){}
-    (await dbAll()).sort((a,b)=>a.id-b.id).forEach(o=>{
-      if(o.type=='yt')items.push({id:o.id,type:'yt',src:o.src,name:o.name,dur:o.dur,cat:o.cat});
-      else{const v={id:o.id,type:o.type,name:o.name,cat:o.cat,hidden:o.hidden,src:URL.createObjectURL(o.blob)};(o.kind=='ad'?ads:items).push(v)}
-    });
-    ready=true;draw();
-  }catch(e){$('store').textContent='⚠️ មិនអាចប្រើឃ្លាំងផ្ទុកអចិន្ត្រៀយ៍បានទេ (សូមបើកតាម http://localhost ឬ https)'}
-  showStore();
-}
-function addYT(){if(!isAdm())return;
-  const u=$('yt').value.trim();
-  const m=u.match(/(?:v=|youtu\.be\/|embed\/|shorts\/|live\/)([\w-]{11})/);
-  if(!m){alert('តំណ YouTube មិនត្រឹមត្រូវ');return}
-  const o={kind:'item',type:'yt',src:m[1],name:'YouTube: '+m[1],dur:+$('ytd').value||60,cat:$('cat').value};
-  dbPut(o).then(id=>{o.id=id}).catch(()=>{}).finally(()=>{items.push(o);draw();showStore()});$('yt').value='';
-}
-function draw(){
-  $('items').innerHTML='';$('ads').innerHTML='';
-  items.forEach((it,i)=>{if(it.hidden||($('fcat').value&&it.cat!=$('fcat').value))return;const d=document.createElement('div');
-    d.innerHTML=(it.type=='img'?`<img src="${it.src}">`:it.type=='vid'?'🎞️':'▶️')+'<span></span><button class="btn r">✕</button>';
-    d.querySelector('span').textContent=catL(it.cat)+it.name;d.querySelector('button').onclick=()=>delItem(it);$('items').appendChild(d)});
-  ads.forEach((it,i)=>{const d=document.createElement('div');
-    d.innerHTML=`<img src="${it.src}"><span></span><button class="btn r">✕</button>`;
-    d.querySelector('span').textContent=it.name;d.querySelector('button').onclick=()=>{if(isAdm()&&confirm('លុបពាណិជ្ជកម្មនេះចេញជាអចិន្ត្រៀយ៍?')){if(it.id)dbDel(it.id).catch(()=>{});ads.splice(i,1);draw();showStore()}};$('ads').appendChild(d)});
-  fillSel();drawSch();
-}
-function setTick(){
-  const SZ={s:[14,24],m:[17,30],l:[22,38]},spd=($('spd').value||15)+'s';
-  [[1,'txt','tick','tickt'],[2,'txt2','tick2','tickt2']].forEach(([n,t,bar,sp])=>{
-    const v=$(t).value.trim(),z=SZ[$('sz'+n).value]||SZ.m;
-    $(bar).classList.toggle('hide',!v);$(sp).textContent=v;$(sp).style.animationDuration=spd;
-    $(bar).style.setProperty('--h',z[1]+'px');$(bar).style.setProperty('--f',z[0]+'px');
-  });
-  try{localStorage.setItem('txt',$('txt').value.trim());localStorage.setItem('txt2',$('txt2').value.trim());
-    localStorage.setItem('sz1',$('sz1').value);localStorage.setItem('sz2',$('sz2').value);localStorage.setItem('spd',$('spd').value)}catch(e){}
-}
-function next(){
-  if(!running||!Q.length)return;
-  const i=idx%Q.length,q=Q[i],it=q.it,ck=clk();curI=i;idx=i+1;clearTimeout(timer);
-  $('pt').textContent=q.title?`${DAYS[q.day]} ${q.time} · ${q.title}`:'';$('pt').classList.toggle('hide',!q.title);
-  const s=$('screen');s.innerHTML='';
-  if(it.type=='img'){s.innerHTML=`<img class="m" src="${it.src}">`;if(!ck)timer=setTimeout(next,(+$('dur').value||8)*1000)}
-  else if(it.type=='vid'){const v=document.createElement('video');v.src=it.src;v.muted=!wantSound;v.autoplay=true;v.playsInline=true;v.controls=false;v.setAttribute('controlsList','nodownload noremoteplayback');v.disablePictureInPicture=true;if(ck)v.loop=true;else v.onended=next;v.onerror=()=>{if(!ck)timer=setTimeout(next,1000)};s.appendChild(v);v.play().catch(()=>{v.muted=true;v.play().catch(()=>{})})}
-  else{s.innerHTML=`<iframe src="https://www.youtube.com/embed/${it.src}?autoplay=1&mute=1&enablejsapi=1&rel=0&controls=0&modestbranding=1&disablekb=1&fs=0&iv_load_policy=3&playsinline=1${ck?'&loop=1&playlist='+it.src:''}${location.protocol.startsWith('http')?'&origin='+encodeURIComponent(location.origin):''}" allow="autoplay;encrypted-media;fullscreen" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>`;
-    const f=s.firstChild;if(f)f.onload=()=>{if(wantSound)snd(true)};
-    if(!ck)timer=setTimeout(next,it.dur*1000)}
-}
-/* ===== កាលវិភាគ ច័ន្ទ–អាទិត្យ ===== */
-const DAYS=['ច័ន្ទ','អង្គារ','ពុធ','ព្រហស្បតិ៍','សុក្រ','សៅរ៍','អាទិត្យ'];
-$('sd').innerHTML=DAYS.map((d,i)=>`<option value="${i}">${d}</option>`).join('');
-let sched=[],Q=[],curI=-1,clock=true,viewed=false,wantSound=false,ready=false,adminOn=false;
-/* កាលវិភាគរក្សាតំណ YouTube ផ្ទាល់ខ្លួន ដូច្នេះលុបតំណពីបញ្ជីបាន ហើយនៅតែចាក់តាមម៉ោង */
-const ytOf=s=>s.yt||((/^YouTube: ([\w-]{11})$/.exec(s.name||''))||[])[1];
-async function delItem(it){if(!isAdm())return;
-  const used=sched.filter(s=>s.itemId==it.id||s.name==it.name);
-  if(!confirm(used.length?'លុបចេញពីបញ្ជី? កាលវិភាគនៅតែចាក់វិដេអូ/រូបនេះតាមម៉ោងកំណត់។':'លុបធាតុនេះចេញជាអចិន្ត្រៀយ៍?'))return;
-  if(it.type=='yt')used.forEach(s=>{s.yt=it.src;s.ytdur=it.dur||60});
-  if(used.length&&it.type!='yt'){ // ឯកសារប្រើក្នុងកាលវិភាគ៖ លាក់ពីបញ្ជី តែរក្សាឯកសារទុកសម្រាប់កាលវិភាគ
-    it.hidden=true;
-    try{if(it.id){const r=await idb('readonly',s=>s.get(it.id));if(r){r.hidden=true;await dbSet(r)}}}catch(e){}
-  }else{if(it.id)dbDel(it.id).catch(()=>{});const k=items.indexOf(it);if(k>=0)items.splice(k,1)}
-  saveSch();draw();showStore();
-}
-function purgeHidden(){if(!isAdm())return; // លុបឯកសារដែលលាក់ ពេលមិនប្រើក្នុងកាលវិភាគទៀត
-  items.filter(i=>i.hidden&&!sched.some(s=>s.itemId==i.id||s.name==i.name)).forEach(i=>{if(i.id)dbDel(i.id).catch(()=>{});items.splice(items.indexOf(i),1)});
-  draw();showStore();
-}
-const CATS=[['animal','🐾 ឯកសារសត្វ'],['cartoon','🎨 តុក្កតា'],['recap','📖 សម្រាយរឿង'],['movie','🎬 រឿង'],['sport','⚽ កីឡា'],['music','🎵 តន្ត្រី'],['ads','📢 ពាណិជ្ជកម្ម'],['fun','😄 កម្សាន្ត'],['short','⏱️ វីដេអូខ្លី']];
-const catL=c=>{const x=CATS.find(k=>k[0]==c);return x?x[1]+' · ':''};
-$('cat').innerHTML='<option value="">គ្មានប្រភេទ</option>'+CATS.map(k=>`<option value="${k[0]}">${k[1]}</option>`).join('');
-$('fcat').innerHTML='<option value="">ទាំងអស់</option>'+CATS.map(k=>`<option value="${k[0]}">${k[1]}</option>`).join('');
-function showStats(){let v=0;try{v=+localStorage.getItem('views')||0}catch(e){}$('stats').textContent=`👁️ ចំនួនអ្នកមើល (ចំនួនដងបើក លើឧបករណ៍នេះ)៖ ${v} · 👥 អ្នកចុះឈ្មោះ៖ ${getUsers().length}`}
-function setLtxt(){if(!isAdm())return;const t=$('ltx').value.trim();try{localStorage.setItem('ltxt',t)}catch(e){}$('ltxt').textContent=t;$('ltxt').classList.toggle('hide',!t)}
-const clk=()=>clock&&sched.length>0;
-const saveSch=()=>{try{localStorage.setItem('sched',JSON.stringify(sched))}catch(e){}};
-const isAdm=()=>adminOn; // សិទ្ធិ admin ក្នុងអង្គចងចាំតែប៉ុណ្ណោះ
-function fillSel(){const s=$('si');s.innerHTML='';items.filter(i=>!i.hidden).forEach(i=>{const o=document.createElement('option');o.value=i.id;o.textContent=(i.type=='vid'?'🎞️ ':i.type=='img'?'🖼️ ':'▶️ ')+catL(i.cat)+i.name;s.appendChild(o)})}
-function drawSch(){
-  const L=$('sched');L.innerHTML='';
-  sched.forEach(s=>{const d=document.createElement('div'),sp=document.createElement('span');
-    sp.style.flex='1';const gone=ready&&!ytOf(s)&&!items.some(i=>i.id==s.itemId||i.name==s.name);
-    sp.textContent=`${gone?'⚠️ ':''}${DAYS[s.day]} ${s.time||'00:00'} — ${s.title||s.name}${gone?' (វិដេអូត្រូវបានលុប)':''}`;d.appendChild(sp);
-    if(isAdm()){const b=document.createElement('button');b.className='btn r';b.textContent='✕';b.onclick=()=>{if(isAdm()&&confirm('លុប?')){sched=sched.filter(x=>x.id!=s.id);saveSch();purgeHidden();drawSch()}};d.appendChild(b)}
-    d.style.display='flex';d.style.gap='8px';L.appendChild(d)});
-  if(!sched.length)L.innerHTML='<div>មិនទាន់មានកាលវិភាគ</div>';
-}
-function addSch(){if(!isAdm())return;
-  const it=items.find(i=>i.id==$('si').value);if(!it)return alert('សូមបន្ថែមវិដេអូមុន');
-  sched.push({id:Date.now(),day:+$('sd').value,time:$('stm').value||'00:00',title:$('sti').value.trim(),itemId:it.id,name:it.name,...(it.type=='yt'?{yt:it.src,ytdur:it.dur||60}:{})});
-  sched.sort((a,b)=>a.day-b.day||(a.time||'').localeCompare(b.time||''));saveSch();$('sti').value='';drawSch();
-}
-const tkey=(d,t)=>{const [H,M]=(t||'00:00').split(':');return d*1440+(+H||0)*60+(+M||0)};
-function buildQ(){
-  const L=sched.map(s=>({it:items.find(i=>i.id==s.itemId)||items.find(i=>i.name==s.name)||(ytOf(s)?{type:'yt',src:ytOf(s),dur:s.ytdur||60,name:s.name}:undefined),title:s.title,day:s.day,time:s.time||'00:00',key:tkey(s.day,s.time)})).filter(x=>x.it);
-  L.sort((a,b)=>a.key-b.key);
-  return L.length?L:(isAdm()?items:[]).filter(i=>!i.hidden&&(!$('fcat').value||i.cat==$('fcat').value)).map(it=>({it,title:'',day:0,time:'00:00',key:0}));
-}
-function curPos(now=new Date()){ // កម្មវិធីដែលត្រូវនឹងម៉ោងបច្ចុប្បន្ន (ថ្ងៃ+ម៉ោង)
-  const k=tkey((now.getDay()+6)%7,now.getHours()+':'+now.getMinutes());let p=-1;
-  Q.forEach((q,i)=>{if(q.key<=k&&(p<0||q.key>=Q[p].key))p=i});
-  return p<0?Q.reduce((b,q,i)=>q.key>=Q[b].key?i:b,0):p; // មុនកម្មវិធីដំបូង → កម្មវិធីចុងក្រោយនៃសប្តាហ៍
-}
-function snd(on){ // បើក/បិទសំឡេង (វីដេអូ និង YouTube)
-  wantSound=on;const s=$('screen');
-  [...(s.children||[])].forEach(e=>{
-    if(e.tagName=='VIDEO'){e.muted=!on;if(on)e.play&&e.play().catch(()=>{})}
-    else if(e.contentWindow)e.contentWindow.postMessage(JSON.stringify({event:'command',func:on?'unMute':'mute',args:[]}),'*');
-  });
-}
-function setClk(){if(!isAdm())return;clock=$('clk').checked;try{localStorage.setItem('clk',clock?'1':'0')}catch(e){}if(running)startST(true)}
-setInterval(()=>{if(running&&clk()){const p=curPos();if(p!==curI){idx=p;next()}}},15000);
-/* រូបថតលើវិដេអូ */
-function setOvl(i){if(!isAdm())return;
-  const f=i.files[0];i.value='';if(!f)return;const im=new Image();
-  im.onload=()=>{const k=Math.min(1,800/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=im.width*k;c.height=im.height*k;
-    c.getContext('2d').drawImage(im,0,0,c.width,c.height);
-    try{localStorage.setItem('ovl',c.toDataURL('image/jpeg',.85))}catch(e){alert('⚠️ រក្សាទុករូបមិនបាន')}loadSettings()};
-  im.src=URL.createObjectURL(f);
-}
-function clearOvl(){if(!isAdm())return;try{localStorage.removeItem('ovl')}catch(e){}loadSettings()}
-function loadSettings(){
-  const g=k=>{try{return localStorage.getItem(k)||''}catch(e){return''}};
-  const l=g('logo'),o=g('ovl');
-  if(l)$('logo').src=l;$('logo').classList.toggle('hide',!l);
-  if(o)$('ovl').src=o;$('ovl').classList.toggle('hide',!o);
-  $('txt').value=g('txt');$('txt2').value=g('txt2');$('sz1').value=g('sz1')||'m';$('sz2').value=g('sz2')||'m';$('spd').value=g('spd')||15;
-  try{sched=JSON.parse(g('sched')||'[]')}catch(e){sched=[]}
-  clock=g('clk')!=='0';$('clk').checked=clock;
-  const lt=g('ltxt');$('ltx').value=lt;$('ltxt').textContent=lt;$('ltxt').classList.toggle('hide',!lt);
-  setTick();drawSch();showStats();
-}
-function startST(quiet){
-  Q=buildQ();if(!Q.length){if(quiet===undefined)alert(isAdm()?'សូមបន្ថែមរូបថត វីដេអូ ឬ YouTube មុន':'មិនទាន់មានកាលវិភាគសម្រាប់ចាក់');return}
-  if(quiet!=='auto')wantSound=true;
-  if(!viewed&&quiet!=='auto'){viewed=true;try{localStorage.setItem('views',+(localStorage.getItem('views')||0)+1)}catch(e){}showStats()}
-  stopST();running=true;idx=curPos();setTick();next();
-  let a=0;
-  const showAd=()=>{const el=$('ad');if(!ads.length){el.classList.add('hide');return}
-    el.src=ads[a++%ads.length].src;el.classList.remove('hide')};
-  showAd();adTimer=setInterval(showAd,10000);
-}
-function stopST(){$('pt').classList.add('hide');running=false;clearTimeout(timer);clearInterval(adTimer);$('screen').innerHTML='';$('ad').classList.add('hide')}
-/* ===== ចុះឈ្មោះ Gmail / admin (ក្នុង index.html) ===== */
-const H=s=>{let a=3735928559,b=1103547991;for(let i=0;i<s.length;i++){const c=s.charCodeAt(i);a=Math.imul(a^c,2654435761);b=Math.imul(b^c,1597334677)}a=Math.imul(a^(a>>>16),2246822507)^Math.imul(b^(b>>>13),3266489909);b=Math.imul(b^(b>>>16),2246822507)^Math.imul(a^(a>>>13),3266489909);return(4294967296*(2097151&b)+(a>>>0)).toString(16)};
-const ADMIN_H='26214783468e3'; // hash only — the admin name itself is not written in this file
-const GM=/^[\w.+-]{3,64}@gmail\.com$/i;
-const getUsers=()=>{try{return JSON.parse(localStorage.getItem('users')||'[]')}catch(e){return[]}};
-function join(){
-  const v=$('who').value.replace(/[\u200B-\u200D\uFEFF]/g,'').trim();$('who').value='';if(!v)return;
-  const m=$('msg');
-  if(H(v)===ADMIN_H){adminOn=true;$('adm').classList.remove('hide');drawSch();showStats();m.style.color='#3fb950';m.textContent='(ត្រឹមត្រូវហើយ)';startST(true);return}
-  if(GM.test(v)){
-    let reg='';try{reg=localStorage.getItem('reg')||''}catch(e){}
-    if(reg){m.style.color='#3fb950';m.textContent='✅ ចុះឈ្មោះរួចហើយ';startST(true);return} // ចុះឈ្មោះម្តងហើយ មិនចុះម្តងទៀត
-    const e=v.toLowerCase(),u=getUsers();
-    if(!u.some(x=>x.email==e)){u.push({email:e,time:new Date().toISOString()});try{localStorage.setItem('users',JSON.stringify(u))}catch(x){}}
-    try{localStorage.setItem('reg',e)}catch(x){}
-    m.style.color='#3fb950';m.textContent='✅ ឧបករណ៍នេះចុះឈ្មោះបានសម្រេច';showStats();startST(true);return;
-  }
-  m.style.color='#f85149';m.textContent='⚠️ សូមបញ្ចូល Gmail ឲ្យត្រឹមត្រូវ';
-}
-function showUsers(){if(!isAdm())return;
-  const u=getUsers(),L=$('users');L.innerHTML='';
-  u.forEach(x=>{const d=document.createElement('div');d.textContent=x.email+'  ·  '+x.time.slice(0,10);L.appendChild(d)});
-  if(!u.length)L.innerHTML='<div>គ្មាន</div>';
-}
-$('who').addEventListener('keydown',e=>{if(e.key=='Enter')join()});
-try{const r=localStorage.getItem('reg');if(r){$('msg').style.color='#3fb950';$('msg').textContent='✅ ចុះឈ្មោះរួចហើយ ('+r+')'}}catch(e){}
-
-init().then(()=>{if(clk())startST('auto')});loadSettings();
+function renderSchedulePostOptions(){const sel=$('#schedulePost');if(!sel)return;const old=sel.value;sel.innerHTML='<option value="">មិនជ្រើស</option>'+posts.filter(p=>p.type==='video'&&(p.fileUrl||p.mediaUrl)).map(p=>`<option value="${esc(p.id)}">${esc(p.title)}</option>`).join('');if([...sel.options].some(o=>o.value===old))sel.value=old}
+function renderAdminSchedule(){$('#adminSchedule').innerHTML=me?.role==='admin'?schedules.map(s=>`<div class="row"><span>${days[s.day]} ${esc(s.start)} ${esc(s.title)} (${esc(categoryLabel(s.category))})</span><button class="danger" onclick="deleteSchedule('${s.id}')">លុបកាលវិភាគ</button></div>`).join('')+'<p class="muted">ការលុបកាលវិភាគមិនលុបវីដេអូដែលបានបង្ហោះក្នុងបណ្ណាល័យទេ។</p>':''}
+function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+$('#loginBtn').onclick=()=>$('#authDialog').showModal();$('#closeAuth').onclick=()=>$('#authDialog').close();
+$('#authForm').elements.action.onchange=()=>{const a=$('#authForm').elements.action.value,admin=a==='admin-login';$('#usernameField').classList.toggle('hidden',!admin);$('#nameField').classList.toggle('hidden',admin||a==='login');$('#authForm').elements.name.required=a==='register';$('#authForm').elements.email.required=!admin;$('#authForm').elements.email.closest('label').classList.toggle('hidden',admin);$('#googleBtn').classList.toggle('hidden',admin)};$('#authSubmit').onclick=async()=>{const f=new FormData($('#authForm')),action=f.get('action');try{const payload={name:f.get('name'),email:f.get('email'),password:f.get('password'),username:f.get('username')};const r=await api('/api/auth/'+action,{method:'POST',body:JSON.stringify(payload)});me=r.user;$('#authDialog').close();await load()}catch(e){$('#authError').textContent=e.message}};
+$('#logoutBtn').onclick=async()=>{try{await api('/api/logout',{method:'POST',body:'{}'});me=null;await load()}catch(e){say(e)}};
+$('#googleBtn').onclick=()=>{const clientId=window.TV_CONFIG?.googleClientId;if(!clientId||clientId==='YOUR_GOOGLE_CLIENT_ID'){alert('សូមកំណត់ googleClientId ក្នុង name.js និង GOOGLE_CLIENT_ID ក្នុង .env ជាមុន។');return}if(!window.google){alert('មិនអាចផ្ទុក Google Identity Services បានទេ។');return}window.google.accounts.id.initialize({client_id:clientId,callback:async response=>{try{const r=await api('/api/auth/google',{method:'POST',body:JSON.stringify({credential:response.credential})});me=r.user;$('#authDialog').close();await load()}catch(e){$('#authError').textContent=e.message}}});window.google.accounts.id.prompt()};
+const gs=document.createElement('script');gs.src='https://accounts.google.com/gsi/client';gs.async=true;document.head.append(gs);
+$('#postForm').onsubmit=async e=>{e.preventDefault();try{if(me?.role!=='admin')throw Error('ត្រូវការ Admin');const fd=new FormData(e.target);await api('/api/posts',{method:'POST',body:fd});e.target.reset();await load();alert('បង្ហោះជោគជ័យ')}catch(err){say(err)}};
+$('#scheduleForm').onsubmit=async e=>{e.preventDefault();try{if(me?.role!=='admin')throw Error('ត្រូវការ Admin');const o=Object.fromEntries(new FormData(e.target));o.day=Number(o.day);await api('/api/schedules',{method:'POST',body:JSON.stringify(o)});e.target.reset();await load()}catch(err){say(err)}};
+window.deleteSchedule=async id=>{if(!confirm('លុបកាលវិភាគនេះ?'))return;try{await api('/api/schedules/'+id,{method:'DELETE',body:'{}'});await load()}catch(e){say(e)}};
+$('#saveBrand').onclick=async()=>{try{if(me?.role!=='admin')throw Error('ត្រូវការ Admin');const fd=new FormData();fd.append('stationName',$('#editStation').value);fd.append('topTicker',$('#editTop').value);fd.append('bottomTicker',$('#editBottom').value);fd.append('logoCaption',$('#editLogoCaption').value);fd.append('tickerMotion',$('#tickerMotion').value||'bounce-fade');if($('#logoFile').files[0])fd.append('logo',$('#logoFile').files[0]);brand=await api('/api/brand',{method:'POST',body:fd});render();alert('បានរក្សាទុក')}catch(e){say(e)}};
+function autoVideos(){return posts.filter(p=>p.type==='video'&&(p.fileUrl||p.mediaUrl))}function playAutoVideo(index){const list=autoVideos();if(!list.length)return;autoVideoIndex=((index%list.length)+list.length)%list.length;const video=list[autoVideoIndex];$('#player').dataset.postId=video.id;$('#player').dataset.playMode='auto';$('#currentProgram').textContent=video.title;$('#programTime').textContent=categoryLabel(video.category)+' • ចាក់បន្តជុំ';play({name:video.title,url:video.fileUrl||video.mediaUrl,loop:true});$('#player').onended=null}async function runScheduledProgram(){const now=new Date(),parts=new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Phnom_Penh',weekday:'short',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).formatToParts(now),wd={Sun:0,Mon:1,Tue:2,Wed:3,Thu:4,Fri:5,Sat:6},day=wd[parts.find(p=>p.type==='weekday')?.value],hm=parts.find(p=>p.type==='hour')?.value+':'+parts.find(p=>p.type==='minute')?.value;const active=schedules.find(s=>s.day===day&&s.start<=hm&&(s.end>s.start?hm<s.end:hm>=s.start||hm<s.end));if(active){let url=active.streamUrl||active.mediaUrl||'';if(!url&&active.postId){const item=posts.find(p=>p.id===active.postId);if(item)url=item.fileUrl||item.mediaUrl||''}if($('#nowTitle').dataset.scheduleId!==active.id){$('#nowTitle').dataset.scheduleId=active.id;$('#player').dataset.postId=active.postId||'';$('#player').dataset.playMode='schedule';$('#currentProgram').textContent=active.title;$('#programTime').textContent=`${categoryLabel(active.category)} • ${active.start}–${active.end} ម៉ោងកម្ពុជា`;if(url)play({name:active.title,url,loop:true,key:active.id+'|'+url});else{$('#player').pause();$('#player').removeAttribute('src');$('#player').load()}}return}$('#nowTitle').dataset.scheduleId='';if($('#player').dataset.playMode!=='auto'&&autoVideos().length){$('#programTime').textContent='វីដេអូបន្តចាក់ឡើងវិញ រង់ចាំកម្មវិធីបន្ទាប់';playAutoVideo(0)}}setInterval(runScheduledProgram,15000);
+load().then(()=>runScheduledProgram());
 </script>
-</body>
-</html>
+</body></html>
