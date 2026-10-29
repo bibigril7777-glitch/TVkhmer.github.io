@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ទូរទស្សន៍ IPTV និងស្ថានីយផ្ទាល់ខ្លួន</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/hls.js/1.5.7/hls.min.js"></script>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:"Khmer OS","Noto Sans Khmer",system-ui,sans-serif;background:#0d1117;color:#e6edf3}
+header{display:flex;gap:8px;padding:10px;background:#161b22;position:sticky;top:0;z-index:5}
+header button{flex:1;padding:12px;border:0;border-radius:8px;background:#21262d;color:#e6edf3;font-size:16px}
+header button.on{background:#e50914}
+main{padding:10px;max-width:1000px;margin:auto}
+.hide{display:none}
+.stage{position:relative;width:100%;aspect-ratio:16/9;background:#000;border-radius:10px;overflow:hidden}
+.stage video,.stage iframe,.stage img.m{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;border:0;background:#000}
+#lg{position:absolute;top:40px;right:8px;z-index:3;max-width:32%;text-align:center}
+#logo{display:block;max-height:60px;max-width:100%;margin:0 auto}
+#ltxt{margin-top:2px;font-weight:bold;font-size:13px;text-shadow:0 1px 3px #000;animation:bf 1.6s ease-in-out infinite alternate}
+@keyframes bf{from{transform:translateX(-10px) scale(.88)}to{transform:translateX(10px) scale(1.12)}}
+#screen *{pointer-events:none}
+#shield{position:absolute;inset:0;z-index:6}
+#stage{user-select:none;-webkit-user-select:none}
+#ad{position:absolute;left:8px;bottom:46px;max-height:28%;max-width:35%;z-index:3;border-radius:6px;border:2px solid #fff}
+.tick{position:absolute;left:0;right:0;bottom:0;height:var(--h,28px);background:rgba(200,0,0,.85);overflow:hidden;z-index:4;white-space:nowrap}
+.tick.top{top:0;bottom:auto;background:rgba(0,70,200,.88)}
+#pt{position:absolute;top:40px;left:8px;z-index:3;background:rgba(0,0,0,.65);padding:4px 10px;border-radius:6px;font-size:14px}
+#ovl{position:absolute;right:8px;bottom:46px;max-height:30%;max-width:30%;z-index:3;border-radius:6px}
+.tick span{display:inline-block;padding-left:100%;line-height:var(--h,28px);font-size:var(--f,16px);font-weight:bold;animation:t 15s linear infinite}
+@keyframes t{to{transform:translateX(-100%)}}
+.row{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+select,input[type=text],input[type=search],input[type=number],input[type=time],textarea{flex:1;min-width:120px;padding:10px;border-radius:8px;border:1px solid #30363d;background:#161b22;color:#e6edf3;font-size:15px}
+.btn{padding:10px 14px;border:0;border-radius:8px;background:#238636;color:#fff;font-size:15px;cursor:pointer}
+.btn.r{background:#da3633}.btn.b{background:#1f6feb}
+.list{max-height:320px;overflow:auto;background:#161b22;border-radius:8px}
+.list div{padding:10px;border-bottom:1px solid #21262d;cursor:pointer}
+.list div:hover{background:#21262d}
+h3{margin:18px 0 6px}
+.items div{display:flex;align-items:center;gap:8px;padding:6px;background:#161b22;margin:4px 0;border-radius:8px}
+.items img{width:48px;height:36px;object-fit:cover;border-radius:4px}
+.items span{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+small{color:#8b949e}
+</style>
+</head>
+<body>
+<header>
+  <button id="t1" class="on" onclick="tab(1)">📺 ទូរទស្សន៍ពិភពលោក</button>
+  <button id="t2" onclick="tab(2)">🎬 ស្ថានីយខ្ញុំ</button>
+</header>
+<main>
+
+<section id="p1">
+  <div class="stage"><video id="tv" controls autoplay playsinline></video></div>
+  <p id="now"><small>ជ្រើសប៉ុស្តិ៍ខាងក្រោម</small></p>
+  <div class="row">
+    <select id="country" onchange="loadCountry()"></select>
+    <input type="search" id="q" placeholder="ស្វែងរកប៉ុស្តិ៍..." oninput="renderList()">
+  </div>
+  <div class="list" id="list"></div>
+</section>
+
+<section id="p2" class="hide">
+  <div class="stage" id="stage" oncontextmenu="return false">
+    <div id="screen"></div>
+    <div id="lg"><img id="logo" class="hide" alt=""><div id="ltxt" class="hide"></div></div>
+    <img id="ad" class="hide" alt="">
+    <img id="ovl" class="hide" alt="">
+    <div id="pt" class="hide"></div>
+    <div class="tick top hide" id="tick2"><span id="tickt2"></span></div>
+    <div class="tick hide" id="tick"><span id="tickt"></span></div>
+    <div id="shield"></div>
+  </div>
+  <div class="row">
+    <button class="btn" onclick="startST()">▶ បើក</button>
+    <button class="btn b" onclick="snd(true)">🔊 សំឡេង</button>
+    <button class="btn r" onclick="stopST()">⏹ ឈប់</button>
+    <button class="btn b" onclick="document.getElementById('stage').requestFullscreen&&document.getElementById('stage').requestFullscreen()">⛶ ពេញអេក្រង់</button>
+  </div>
+  <h3>📅 កាលវិភាគប្រចាំសប្តាហ៍</h3>
+  <small id="sync"></small>
+  <div class="row hide"><input type="text" id="svr" placeholder="អាសយដ្ឋាន server ឧ. http://192.168.1.5:3000"><button class="btn b" onclick="setSvr()">🔄 ភ្ជាប់ / ទាញថ្មី</button></div>
+  <div class="list" id="sched"></div>
+
+  <h3>🎮 ហ្គេម (.apk)</h3>
+  <div class="list" id="games"></div>
+
+  <div class="card" style="background:#161b22;border-radius:10px;padding:10px;margin-top:12px">
+    <div class="row">
+      <input type="text" id="who" placeholder="បញ្ចូលឈ្មោះរបស់អ្នកដើម្បីចុះឈ្មោះ" autocomplete="off">
+      <button class="btn" onclick="join()">បើក</button>
+    </div>
+    <small id="msg">ចុះឈ្មោះតែឈ្មោះរបស់អ្នក ដើម្បីមើលវិដេអូ។ ឈ្មោះរក្សាទុកលើឧបករណ៍នេះប៉ុណ្ណោះ។</small>
+  </div>
+
+  <div id="adm" class="hide">
+  <p><small id="store">💾 កំពុងពិនិត្យទំហំផ្ទុក...</small></p>
+  <p><small id="stats"></small></p>
+  <div class="row"><button class="btn b" onclick="exportCfg()">📤 បង្កើត schedule.json (ឲ្យអ្នកទស្សនាគ្រប់ឧបករណ៍ឃើញ)</button></div>
+  <p><small id="pub">ដាក់ schedule.json ក្បែរ index.html លើ hosting (GitHub Pages / Netlify) ។ ប្រើតំណ YouTube ឬតំណវិដេអូ .mp4 ដើម្បីចែករំលែកបាន។</small></p>
+  <div class="row">
+    <button class="btn b" onclick="exportBK()">💾 បម្រុងទុក (Export)</button>
+    <button class="btn" onclick="document.getElementById('bk').click()">📂 ស្ដារ (Import)</button>
+    <input type="file" id="bk" accept=".tvbackup" class="hide" onchange="importBK(this)">
+  </div>
+
+  <h3>🏷️ Logo ស្ថានីយ</h3>
+  <input type="file" accept="image/*" onchange="setLogo(this)">
+  <h3>✍️ អក្សរក្រោម Logo (មានចលនាមុខ-ក្រោយ)</h3>
+  <input type="text" id="ltx" placeholder="សរសេរអត្ថបទក្រោម Logo..." oninput="setLtxt()" style="width:100%">
+
+  <h3>🗂️ មាតិកា</h3>
+  <div class="row"><small>ប្រភេទសម្រាប់ឯកសារថ្មី:</small><select id="cat"></select></div>
+  <div class="row"><small>បង្ហាញ/ចាក់តែប្រភេទ:</small><select id="fcat" onchange="draw()"></select></div>
+
+  <h3>🖼️ រូបថត / 🎞️ វីដេអូ ពីទូរស័ព្ទ</h3>
+  <input type="file" accept="image/*,video/*" multiple onchange="addFiles(this)">
+  <div class="row"><input type="number" id="dur" value="8" min="2"><small style="align-self:center">វិនាទី/រូបថត</small></div>
+
+  <h3>▶️ តំណ YouTube</h3>
+  <div class="row">
+    <input type="text" id="yt" placeholder="https://youtube.com/watch?v=...">
+    <input type="number" id="ytd" value="60" min="5" title="រយៈពេល(វិនាទី)">
+    <button class="btn b" onclick="addYT()">បន្ថែម</button>
+  </div>
+  <div class="items" id="items"></div>
+
+  <h3>📢 ពាណិជ្ជកម្ម (រូបថត)</h3>
+  <input type="file" accept="image/*" multiple onchange="addAds(this)">
+  <div class="items" id="ads"></div>
+
+  <h3>📝 អក្សរហូរទី ១ (ខាងក្រោម)</h3>
+  <textarea id="txt" rows="2" placeholder="សរសេរអត្ថបទអក្សរហូរទី ១..." oninput="setTick()"></textarea>
+  <div class="row"><small>ទំហំអក្សរ:</small><select id="sz1" onchange="setTick()"><option value="s">តូច</option><option value="m">មធ្យម</option><option value="l">ធំ</option></select></div>
+
+  <h3>📝 អក្សរហូរទី ២ (ខាងលើ)</h3>
+  <textarea id="txt2" rows="2" placeholder="សរសេរអត្ថបទអក្សរហូរទី ២..." oninput="setTick()"></textarea>
+  <div class="row"><small>ទំហំអក្សរ:</small><select id="sz2" onchange="setTick()"><option value="s">តូច</option><option value="m">មធ្យម</option><option value="l">ធំ</option></select></div>
+  <div class="row"><small>ល្បឿនអក្សរហូរ (វិនាទី):</small><input type="number" id="spd" value="15" min="4" oninput="setTick()"></div>
+
+  <h3>🖼️ រូបថតលើវិដេអូ</h3>
+  <div class="row"><input type="file" accept="image/*" onchange="setOvl(this)"><button class="btn r" onclick="clearOvl()">លុបរូប</button></div>
+
+  <h3>🗓️ បន្ថែមកាលវិភាគ</h3>
+  <div class="row"><select id="sd"></select><input type="time" id="stm" value="08:00"></div>
+  <div class="row"><input type="text" id="sti" placeholder="ចំណងជើងកម្មវិធី"></div>
+  <div class="row"><input type="text" id="surl" placeholder="ឬតំណ YouTube / តំណវិដេអូ .mp4 / តំណរូប .jpg (ចែករំលែកបានគ្រប់ឧបករណ៍)"></div>
+  <div class="row"><select id="si"></select><button class="btn" onclick="addSch()">បន្ថែម</button></div>
+  <small>វិដេអូចាក់តាមលំដាប់ ថ្ងៃ+ម៉ោង (ច័ន្ទ→អាទិត្យ) ចប់មួយបន្តមួយ ហើយត្រឡប់ទៅច័ន្ទវិញ។ ចាប់ផ្តើមពីកម្មវិធីដែលត្រូវនឹងម៉ោងបច្ចុប្បន្ន។</small>
+  <div class="row"><label><input type="checkbox" id="clk" onchange="setClk()"> ⏰ ចាក់តាមម៉ោងពិត (ដល់ម៉ោងកំណត់ ប្តូរកម្មវិធីភ្លាម ហើយចាក់ឡើងវិញរហូតដល់ម៉ោងបន្ទាប់)</label></div>
+
+  <h3>🔖 ត្រាអ្នកអនុញ្ញាត (name.js)</h3>
+  <textarea id="nmlist" rows="4" placeholder="ឈ្មោះម្នាក់ក្នុងមួយបន្ទាត់។ មានតែឈ្មោះក្នុងបញ្ជីទេដែលមើលបាន (ទទេ = អ្នកណាក៏ចុះឈ្មោះមើលបាន)"></textarea>
+  <div class="row"><button class="btn b" onclick="exportNames()">📤 បង្កើត name.js</button><button class="btn" onclick="addLocalNames()">➕ បន្ថែមអ្នកចុះឈ្មោះលើឧបករណ៍នេះ</button></div>
+
+  <h3>🎮 ហ្គេម (.apk)</h3>
+  <div class="row"><input type="text" id="gt" placeholder="ឈ្មោះហ្គេម"></div>
+  <div class="row"><input type="text" id="gl" placeholder="តំណទាញយក https://.../game.apk"><button class="btn" onclick="addGame()">បន្ថែម</button></div>
+  <div class="row"><button class="btn b" onclick="exportGames()">📤 បង្កើត Game.js</button></div>
+  <p><small id="gmsg">ដាក់ name.js និង Game.js ក្បែរ index.html លើ hosting។ ដាក់តែ APK ដែលអ្នកទុកចិត្ត។</small></p>
+
+  <h3>👥 អ្នកចុះឈ្មោះ (លើឧបករណ៍នេះ)</h3>
+  <button class="btn b" onclick="showUsers()">បង្ហាញបញ្ជី</button>
+  <div class="list" id="users"></div>
+  </div>
+</section>
+</main>
+
+<script src="name.js"></script>
+<script src="Game.js"></script>
+<script>
+const $=id=>document.getElementById(id);
+const C={kh:'🇰🇭 កម្ពុជា',cn:'🇨🇳 ចិន',vn:'🇻🇳 វៀតណាម',la:'🇱🇦 ឡាវ',mm:'🇲🇲 មីយ៉ាន់ម៉ា',sg:'🇸🇬 សិង្ហបុរី',jp:'🇯🇵 ជប៉ុន',kr:'🇰🇷 កូរ៉េខាងត្បូង',kp:'🇰🇵 កូរ៉េខាងជើង',us:'🇺🇸 សហរដ្ឋអាមេរិក',ru:'🇷🇺 រុស្ស៊ី',ua:'🇺🇦 អ៊ុយក្រែន',sy:'🇸🇾 ស៊ីរី',za:'🇿🇦 អាហ្វ្រិកខាងត្បូង',iq:'🇮🇶 អ៊ីរ៉ាក់',ir:'🇮🇷 អ៊ីរ៉ង់',il:'🇮🇱 អ៊ីស្រាអែល',se:'🇸🇪 ស៊ុយអែត',in:'🇮🇳 ឥណ្ឌា',tw:'🇹🇼 តៃវ៉ាន់',id:'🇮🇩 ឥណ្ឌូនេស៊ី',ph:'🇵🇭 ហ្វីលីពីន',my:'🇲🇾 ម៉ាឡេស៊ី',eng:'🇬🇧 អង់គ្លេស (ភាសា)',es:'🇪🇸 អេស្ប៉ាញ',qa:'🇶🇦 កាតា'};
+const SRV={kh:'cambodia',mm:'myanmar',in:'indian',cn:'chinese',tw:'taiwan',id:'indonesia',ru:'russian',ph:'philippines',my:'malaysian',jp:'japanese',us:'america',eng:'english',es:'spain',ua:'ukraine',ir:'iran',iq:'iraq',qa:'qatar',vn:'vietnam',la:'laos',sg:'singapore',kr:'southkorea',kp:'northkorea',sy:'syria',za:'southafrica',il:'israel',se:'sweden'};
+$('country').innerHTML=Object.entries(C).map(([k,v])=>`<option value="${k}">${v}</option>`).join('');
+let chans=[],hls;
+function tab(n){$('p1').classList.toggle('hide',n!=1);$('p2').classList.toggle('hide',n!=2);$('t1').classList.toggle('on',n==1);$('t2').classList.toggle('on',n==2);if(n==2)$('tv').pause()}
+
+async function loadCountry(){
+  $('list').innerHTML='<div>កំពុងផ្ទុក...</div>';
+  try{
+    const k=$('country').value;let r=null;
+    if(SRV[k]&&location.protocol.startsWith('http')){try{r=await fetch(`/playlist/${SRV[k]}.m3u8`);if(!r.ok)r=null}catch(e){r=null}}
+    if(!r){r=await fetch(`https://iptv-org.github.io/iptv/${k=='eng'?'languages':'countries'}/${k}.m3u`)}
+    if(!r.ok)throw 0;
+    const L=(await r.text()).split('\n');chans=[];
+    for(let i=0;i<L.length;i++){
+      if(L[i].startsWith('#EXTINF')){
+        const name=L[i].split(',').pop().trim();
+        let j=i+1;while(L[j]&&L[j].startsWith('#'))j++;
+        if(L[j]&&L[j].startsWith('http'))chans.push({name,url:L[j].trim()});
+      }
+    }
+  }catch(e){chans=[]}
+  renderList();
+}
+function renderList(){
+  const q=$('q').value.toLowerCase();
+  const f=chans.filter(c=>c.name.toLowerCase().includes(q));
+  $('list').innerHTML=f.length?'':'<div>គ្មានប៉ុស្តិ៍ទេ</div>';
+  f.forEach(c=>{const d=document.createElement('div');d.textContent='📺 '+c.name;d.onclick=()=>play(c);$('list').appendChild(d)});
+}
+function play(c){
+  const v=$('tv');$('now').innerHTML='កំពុងចាក់: <b></b>';$('now').querySelector('b').textContent=c.name;
+  if(hls){hls.destroy();hls=null}
+  if(Hls.isSupported()){hls=new Hls();hls.loadSource(c.url);hls.attachMedia(v);hls.on(Hls.Events.ERROR,(e,d)=>{if(d.fatal)$('now').innerHTML='<small>⚠️ ប៉ុស្តិ៍នេះមិនអាចចាក់បាន សូមសាកល្បងប៉ុស្តិ៍ផ្សេង</small>'})}
+  else v.src=c.url;
+  v.play().catch(()=>{});
+}
+loadCountry();
+
+/* ===== ស្ថានីយខ្ញុំ ===== */
+let items=[],ads=[],timer,adTimer,idx=0,running=false,remote=null,rads=[],syncErr=false;
+const ONHTTP=location.protocol.startsWith('http');
+let SVR=ONHTTP?'':(()=>{try{return(localStorage.getItem('svr')||'').replace(/\/+$/,'')}catch(e){return''}})()||'http://localhost:3000';
+function setLogo(i){if(!isAdm())return;const f=i.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{$('logo').src=r.result;$('logo').classList.remove('hide');try{localStorage.setItem('logo',r.result)}catch(e){}};r.readAsDataURL(f)}
+
+/* ---- ឃ្លាំងផ្ទុកអចិន្ត្រៀយ៍ (IndexedDB) ---- */
+let db;
+const idb=(mode,fn)=>new Promise((res,rej)=>{const q=fn(db.transaction('m',mode).objectStore('m'));q.onsuccess=()=>res(q.result);q.onerror=()=>rej(q.error)});
+const dbPut=o=>idb('readwrite',s=>s.add(o)), dbDel=id=>idb('readwrite',s=>s.delete(id)), dbAll=()=>idb('readonly',s=>s.getAll()), dbSet=o=>idb('readwrite',s=>s.put(o));
+async function saveFiles(files,kind){if(!isAdm())return;
+  for(const f of files){
+    const o={kind,type:kind=='ad'?'img':f.type.startsWith('video')?'vid':'img',name:f.name,blob:f,cat:kind=='ad'?'':$('cat').value};
+    try{o.id=await dbPut(o)}catch(e){alert('⚠️ ទំហំផ្ទុកពេញ ឬមិនអាចរក្សាទុក៖ '+f.name);continue}
+    const v={id:o.id,type:o.type,name:o.name,cat:o.cat,src:URL.createObjectURL(f)};
+    (kind=='ad'?ads:items).push(v);
+  }
+  draw();showStore();
+}
+function addFiles(i){const f=[...i.files];i.value='';saveFiles(f,'item')}
+function addAds(i){const f=[...i.files];i.value='';saveFiles(f,'ad')}
+async function showStore(){
+  try{
+    const e=await navigator.storage.estimate(),p=navigator.storage.persisted?await navigator.storage.persisted():false;
+    const g=n=>n>=1e9?(n/1e9).toFixed(2)+' GB':(n/1e6).toFixed(1)+' MB';
+    $('store').textContent=`💾 ប្រើ ${g(e.usage)} / អាចប្រើបាន ${g(e.quota)} · ការការពារមិនឲ្យលុប៖ ${p?'✅ បើក':'⚠️ មិនទាន់បើក'}`;
+  }catch(e){$('store').textContent='💾 កម្មវិធីរុករកនេះមិនបង្ហាញទំហំផ្ទុក'}
+}
+/* ---- បម្រុងទុក / ស្ដារ (.tvbackup) ---- */
+const enc=new TextEncoder(),dec=new TextDecoder();
+async function exportBK(){if(!isAdm())return;
+  try{
+    const all=(await dbAll()).sort((a,b)=>a.id-b.id);
+    const parts=[enc.encode('TVBK1')];
+    const push=(h,b)=>{const hb=enc.encode(JSON.stringify(h)),n=new Uint8Array(4);new DataView(n.buffer).setUint32(0,hb.length);parts.push(n,hb);if(b)parts.push(b)};
+    const meta={kind:'meta',size:0};try{['logo','txt','txt2','sz1','sz2','spd','ovl','sched','clk','ltxt'].forEach(k=>meta[k]=localStorage.getItem(k)||'')}catch(e){}
+    push(meta);
+    all.forEach(o=>push(o.blob?{kind:o.kind,type:o.type,name:o.name,size:o.blob.size,mime:o.blob.type,cat:o.cat,hidden:o.hidden}:{kind:o.kind,type:'yt',name:o.name,src:o.src,dur:o.dur,size:0,cat:o.cat},o.blob));
+    const name='tv-backup-'+new Date().toISOString().slice(0,10)+'.tvbackup';
+    if(window.showSaveFilePicker){
+      const fh=await showSaveFilePicker({suggestedName:name}),w=await fh.createWritable();
+      for(const p of parts)await w.write(p);
+      await w.close();
+    }else{
+      const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(parts));a.download=name;a.click();
+      setTimeout(()=>URL.revokeObjectURL(a.href),120000);
+    }
+    alert('✅ បម្រុងទុកបានជោគជ័យ');
+  }catch(e){if(e.name!='AbortError')alert('⚠️ បម្រុងទុកមិនបាន៖ '+e.message)}
+}
+async function importBK(i){if(!isAdm())return;
+  const f=i.files[0];i.value='';if(!f)return;
+  try{
+    if(dec.decode(await f.slice(0,5).arrayBuffer())!='TVBK1')throw new Error('ឯកសារមិនត្រឹមត្រូវ');
+    const have=new Set((await dbAll()).map(o=>[o.kind,o.name,o.blob?o.blob.size:o.src].join('|')));
+    let off=5,n=0;
+    while(off<f.size){
+      const len=new DataView(await f.slice(off,off+4).arrayBuffer()).getUint32(0);off+=4;
+      const h=JSON.parse(dec.decode(await f.slice(off,off+len).arrayBuffer()));off+=len;
+      if(h.kind=='meta'){
+        try{['logo','txt','txt2','sz1','sz2','spd','ovl','sched','clk','ltxt'].forEach(k=>h[k]&&localStorage.setItem(k,h[k]));loadSettings()}catch(e){}
+        continue;
+      }
+      const blob=h.size?f.slice(off,off+h.size,h.mime):null;off+=h.size;
+      const key=[h.kind,h.name,h.size?h.size:h.src].join('|');
+      if(have.has(key))continue;
+      const o=blob?{kind:h.kind,type:h.type,name:h.name,blob,cat:h.cat,hidden:h.hidden}:{kind:h.kind,type:'yt',name:h.name,src:h.src,dur:h.dur,cat:h.cat};
+      o.id=await dbPut(o);have.add(key);n++;
+      const v=blob?{id:o.id,type:o.type,name:o.name,cat:o.cat,hidden:o.hidden,src:URL.createObjectURL(blob)}:{id:o.id,type:'yt',src:o.src,name:o.name,dur:o.dur,cat:o.cat};
+      (o.kind=='ad'?ads:items).push(v);
+    }
+    draw();showStore();alert('✅ ស្ដារបាន '+n+' ធាតុថ្មី');
+  }catch(e){alert('⚠️ ស្ដារមិនបាន៖ '+e.message)}
+}
+async function init(){
+  try{
+    await new Promise((res,rej)=>{const r=indexedDB.open('tvstation',1);r.onupgradeneeded=()=>r.result.createObjectStore('m',{keyPath:'id',autoIncrement:true});r.onsuccess=()=>{db=r.result;res()};r.onerror=()=>rej(r.error)});
+    try{if(navigator.storage&&navigator.storage.persist)await navigator.storage.persist()}catch(e){}
+    (await dbAll()).sort((a,b)=>a.id-b.id).forEach(o=>{
+      if(o.type=='yt')items.push({id:o.id,type:'yt',src:o.src,name:o.name,dur:o.dur,cat:o.cat});
+      else{const v={id:o.id,type:o.type,name:o.name,cat:o.cat,hidden:o.hidden,src:URL.createObjectURL(o.blob)};(o.kind=='ad'?ads:items).push(v)}
+    });
+    ready=true;draw();
+  }catch(e){$('store').textContent='⚠️ មិនអាចប្រើឃ្លាំងផ្ទុកអចិន្ត្រៀយ៍បានទេ (សូមបើកតាម http://localhost ឬ https)'}
+  showStore();
+}
+function addYT(){if(!isAdm())return;
+  const u=$('yt').value.trim();
+  const m=u.match(/(?:v=|youtu\.be\/|embed\/|shorts\/|live\/)([\w-]{11})/);
+  if(!m){alert('តំណ YouTube មិនត្រឹមត្រូវ');return}
+  const o={kind:'item',type:'yt',src:m[1],name:'YouTube: '+m[1],dur:+$('ytd').value||60,cat:$('cat').value};
+  dbPut(o).then(id=>{o.id=id}).catch(()=>{}).finally(()=>{items.push(o);draw();showStore()});$('yt').value='';
+}
+function draw(){
+  $('items').innerHTML='';$('ads').innerHTML='';
+  items.forEach((it,i)=>{if(it.hidden||($('fcat').value&&it.cat!=$('fcat').value))return;const d=document.createElement('div');
+    d.innerHTML=(it.type=='img'?`<img src="${it.src}">`:it.type=='vid'?'🎞️':'▶️')+'<span></span><button class="btn r">✕</button>';
+    d.querySelector('span').textContent=catL(it.cat)+it.name;d.querySelector('button').onclick=()=>delItem(it);$('items').appendChild(d)});
+  ads.forEach((it,i)=>{const d=document.createElement('div');
+    d.innerHTML=`<img src="${it.src}"><span></span><button class="btn r">✕</button>`;
+    d.querySelector('span').textContent=it.name;d.querySelector('button').onclick=()=>{if(isAdm()&&confirm('លុបពាណិជ្ជកម្មនេះចេញជាអចិន្ត្រៀយ៍?')){if(it.id)dbDel(it.id).catch(()=>{});ads.splice(i,1);draw();showStore()}};$('ads').appendChild(d)});
+  fillSel();drawSch();
+}
+function setTick(){
+  const SZ={s:[14,24],m:[17,30],l:[22,38]},spd=($('spd').value||15)+'s';
+  [[1,'txt','tick','tickt'],[2,'txt2','tick2','tickt2']].forEach(([n,t,bar,sp])=>{
+    const v=$(t).value.trim(),z=SZ[$('sz'+n).value]||SZ.m;
+    $(bar).classList.toggle('hide',!v);$(sp).textContent=v;$(sp).style.animationDuration=spd;
+    $(bar).style.setProperty('--h',z[1]+'px');$(bar).style.setProperty('--f',z[0]+'px');
+  });
+  if(isAdm())try{localStorage.setItem('txt',$('txt').value.trim());localStorage.setItem('txt2',$('txt2').value.trim());
+    localStorage.setItem('sz1',$('sz1').value);localStorage.setItem('sz2',$('sz2').value);localStorage.setItem('spd',$('spd').value)}catch(e){}
+}
+function next(){
+  if(!running||!Q.length)return;
+  const i=idx%Q.length,q=Q[i],it=q.it,ck=clk();curI=i;idx=i+1;clearTimeout(timer);
+  $('pt').textContent=q.title?`${DAYS[q.day]} ${q.time} · ${q.title}`:'';$('pt').classList.toggle('hide',!q.title);
+  const s=$('screen');s.innerHTML='';
+  if(it.type=='img'){s.innerHTML=`<img class="m" src="${it.src}">`;if(!ck)timer=setTimeout(next,(+$('dur').value||8)*1000)}
+  else if(it.type=='vid'){const v=document.createElement('video');v.src=it.src;v.muted=!wantSound;v.autoplay=true;v.playsInline=true;v.controls=false;v.setAttribute('controlsList','nodownload noremoteplayback');v.disablePictureInPicture=true;if(ck)v.loop=true;else v.onended=next;v.onerror=()=>{if(!ck)timer=setTimeout(next,1000)};s.appendChild(v);v.play().catch(()=>{v.muted=true;v.play().catch(()=>{})})}
+  else{s.innerHTML=`<iframe src="https://www.youtube.com/embed/${it.src}?autoplay=1&mute=1&enablejsapi=1&rel=0&controls=0&modestbranding=1&disablekb=1&fs=0&iv_load_policy=3&playsinline=1${ck?'&loop=1&playlist='+it.src:''}${location.protocol.startsWith('http')?'&origin='+encodeURIComponent(location.origin):''}" allow="autoplay;encrypted-media;fullscreen" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>`;
+    const f=s.firstChild;if(f)f.onload=()=>{if(wantSound)snd(true)};
+    if(!ck)timer=setTimeout(next,it.dur*1000)}
+}
+/* ===== កាលវិភាគ ច័ន្ទ–អាទិត្យ ===== */
+const DAYS=['ច័ន្ទ','អង្គារ','ពុធ','ព្រហស្បតិ៍','សុក្រ','សៅរ៍','អាទិត្យ'];
+$('sd').innerHTML=DAYS.map((d,i)=>`<option value="${i}">${d}</option>`).join('');
+let sched=[],Q=[],curI=-1,clock=true,viewed=false,wantSound=false,ready=false,adminOn=false;
+/* កាលវិភាគរក្សាតំណ YouTube ផ្ទាល់ខ្លួន ដូច្នេះលុបតំណពីបញ្ជីបាន ហើយនៅតែចាក់តាមម៉ោង */
+const ytOf=s=>s.yt||((/^YouTube: ([\w-]{11})$/.exec(s.name||''))||[])[1];
+async function delItem(it){if(!isAdm())return;
+  const used=sched.filter(s=>s.itemId==it.id||s.name==it.name);
+  if(!confirm(used.length?'លុបចេញពីបញ្ជី? កាលវិភាគនៅតែចាក់វិដេអូ/រូបនេះតាមម៉ោងកំណត់។':'លុបធាតុនេះចេញជាអចិន្ត្រៀយ៍?'))return;
+  if(it.type=='yt')used.forEach(s=>{s.yt=it.src;s.ytdur=it.dur||60});
+  if(used.length&&it.type!='yt'){ // ឯកសារប្រើក្នុងកាលវិភាគ៖ លាក់ពីបញ្ជី តែរក្សាឯកសារទុកសម្រាប់កាលវិភាគ
+    it.hidden=true;
+    try{if(it.id){const r=await idb('readonly',s=>s.get(it.id));if(r){r.hidden=true;await dbSet(r)}}}catch(e){}
+  }else{if(it.id)dbDel(it.id).catch(()=>{});const k=items.indexOf(it);if(k>=0)items.splice(k,1)}
+  saveSch();draw();showStore();
+}
+function purgeHidden(){if(!isAdm())return; // លុបឯកសារដែលលាក់ ពេលមិនប្រើក្នុងកាលវិភាគទៀត
+  items.filter(i=>i.hidden&&!sched.some(s=>s.itemId==i.id||s.name==i.name)).forEach(i=>{if(i.id)dbDel(i.id).catch(()=>{});items.splice(items.indexOf(i),1)});
+  draw();showStore();
+}
+const CATS=[['animal','🐾 ឯកសារសត្វ'],['cartoon','🎨 តុក្កតា'],['recap','📖 សម្រាយរឿង'],['movie','🎬 រឿង'],['sport','⚽ កីឡា'],['music','🎵 តន្ត្រី'],['ads','📢 ពាណិជ្ជកម្ម'],['fun','😄 កម្សាន្ត'],['short','⏱️ វីដេអូខ្លី']];
+const catL=c=>{const x=CATS.find(k=>k[0]==c);return x?x[1]+' · ':''};
+$('cat').innerHTML='<option value="">គ្មានប្រភេទ</option>'+CATS.map(k=>`<option value="${k[0]}">${k[1]}</option>`).join('');
+$('fcat').innerHTML='<option value="">ទាំងអស់</option>'+CATS.map(k=>`<option value="${k[0]}">${k[1]}</option>`).join('');
+function showStats(){let v=0;try{v=+localStorage.getItem('views')||0}catch(e){}$('stats').textContent=`👁️ ចំនួនអ្នកមើល (ចំនួនដងបើក លើឧបករណ៍នេះ)៖ ${v} · 👥 អ្នកចុះឈ្មោះ៖ ${getUsers().length}`}
+function setLtxt(){if(!isAdm())return;const t=$('ltx').value.trim();try{localStorage.setItem('ltxt',t)}catch(e){}$('ltxt').textContent=t;$('ltxt').classList.toggle('hide',!t)}
+const clk=()=>clock&&(sched.length>0||hasRemote());
+const saveSch=()=>{try{localStorage.setItem('sched',JSON.stringify(sched))}catch(e){}};
+const isAdm=()=>adminOn; // សិទ្ធិ admin ក្នុងអង្គចងចាំតែប៉ុណ្ណោះ
+function fillSel(){const s=$('si');s.innerHTML='';items.filter(i=>!i.hidden).forEach(i=>{const o=document.createElement('option');o.value=i.id;o.textContent=(i.type=='vid'?'🎞️ ':i.type=='img'?'🖼️ ':'▶️ ')+catL(i.cat)+i.name;s.appendChild(o)})}
+function drawSch(){
+  const L=$('sched');L.innerHTML='';
+  const list=hasRemote()?remote.schedule:sched;
+  list.forEach(s=>{const d=document.createElement('div'),sp=document.createElement('span');
+    sp.style.flex='1';const gone=list===sched&&ready&&!ytOf(s)&&!s.url&&!items.some(i=>i.id==s.itemId||i.name==s.name);
+    sp.textContent=`${gone?'⚠️ ':''}${DAYS[s.day]} ${s.time||'00:00'} — ${s.title||s.name||''}${gone?' (វិដេអូត្រូវបានលុប)':''}`;d.appendChild(sp);
+    if(isAdm()){const b=document.createElement('button');b.className='btn r';b.textContent='✕';b.onclick=()=>{if(isAdm()&&confirm('លុប?')){sched=sched.filter(x=>x.id!=s.id);saveSch();purgeHidden();drawSch()}};d.appendChild(b)}
+    d.style.display='flex';d.style.gap='8px';L.appendChild(d)});
+  if(!list.length)L.innerHTML='<div>'+(syncErr&&!isAdm()?'⚠️ មិនអាចភ្ជាប់ server ដើម្បីទាញកាលវិភាគ ព្យាយាមម្តងទៀត...':'មិនទាន់មានកាលវិភាគ')+'</div>';
+}
+function parseLink(u){
+  const y=u.match(/(?:v=|youtu\.be\/|embed\/|shorts\/|live\/)([\w-]{11})/);if(y)return{utype:'yt',yt:y[1]};
+  if(!/^https?:\/\//i.test(u))return null;
+  const e=((u.split(/[?#]/)[0].match(/\.(\w{2,5})$/)||[])[1]||'').toLowerCase();
+  if(['mp4','webm','mov','m4v'].includes(e))return{utype:'vid'};
+  if(['jpg','jpeg','png','gif','webp'].includes(e))return{utype:'img'};
+  return null;
+}
+function addSch(){if(!isAdm())return;
+  const u=$('surl').value.trim(),base={id:Date.now(),day:+$('sd').value,time:$('stm').value||'00:00',title:$('sti').value.trim()};
+  if(u){
+    const p=parseLink(u);if(!p)return alert('តំណមិនត្រឹមត្រូវ៖ ត្រូវជា YouTube ឬ .mp4 / .webm / .jpg / .png');
+    sched.push({...base,itemId:0,name:p.utype=='yt'?'YouTube: '+p.yt:u,...p,url:p.utype=='yt'?'':u,ytdur:60});
+  }else{
+    const it=items.find(i=>i.id==$('si').value);if(!it)return alert('សូមបន្ថែមវិដេអូមុន ឬដាក់តំណ');
+    sched.push({...base,itemId:it.id,name:it.name,...(it.type=='yt'?{yt:it.src,ytdur:it.dur||60}:{})});
+  }
+  sched.sort((a,b)=>a.day-b.day||(a.time||'').localeCompare(b.time||''));saveSch();$('sti').value='';$('surl').value='';drawSch();
+}
+const tkey=(d,t)=>{const [H,M]=(t||'00:00').split(':');return d*1440+(+H||0)*60+(+M||0)};
+const remoteQ=()=>remote.schedule.map(r=>({it:r.type=='yt'?{type:'yt',src:r.yt,dur:r.ytdur||60,name:r.title}:{type:r.type,src:r.url||(r.file?SVR+'/media/'+r.file:''),name:r.title},title:r.title,day:r.day,time:r.time||'00:00',key:tkey(r.day,r.time)})).sort((a,b)=>a.key-b.key);
+const hasRemote=()=>!isAdm()&&remote&&(remote.schedule||[]).length>0;
+function buildQ(){
+  if(hasRemote())return remoteQ();
+  const L=sched.map(s=>({it:items.find(i=>i.id==s.itemId)||items.find(i=>i.name==s.name)||(ytOf(s)?{type:'yt',src:ytOf(s),dur:s.ytdur||60,name:s.name}:undefined)||(s.url?{type:s.utype||'vid',src:s.url,name:s.name}:undefined),title:s.title,day:s.day,time:s.time||'00:00',key:tkey(s.day,s.time)})).filter(x=>x.it);
+  L.sort((a,b)=>a.key-b.key);
+  return L.length?L:(isAdm()?items:[]).filter(i=>!i.hidden&&(!$('fcat').value||i.cat==$('fcat').value)).map(it=>({it,title:'',day:0,time:'00:00',key:0}));
+}
+function curPos(now=new Date()){ // កម្មវិធីដែលត្រូវនឹងម៉ោងបច្ចុប្បន្ន (ថ្ងៃ+ម៉ោង)
+  const k=tkey((now.getDay()+6)%7,now.getHours()+':'+now.getMinutes());let p=-1;
+  Q.forEach((q,i)=>{if(q.key<=k&&(p<0||q.key>=Q[p].key))p=i});
+  return p<0?Q.reduce((b,q,i)=>q.key>=Q[b].key?i:b,0):p; // មុនកម្មវិធីដំបូង → កម្មវិធីចុងក្រោយនៃសប្តាហ៍
+}
+function snd(on){ // បើក/បិទសំឡេង (វីដេអូ និង YouTube)
+  wantSound=on;const s=$('screen');
+  [...(s.children||[])].forEach(e=>{
+    if(e.tagName=='VIDEO'){e.muted=!on;if(on)e.play&&e.play().catch(()=>{})}
+    else if(e.contentWindow)e.contentWindow.postMessage(JSON.stringify({event:'command',func:on?'unMute':'mute',args:[]}),'*');
+  });
+}
+function setClk(){if(!isAdm())return;clock=$('clk').checked;try{localStorage.setItem('clk',clock?'1':'0')}catch(e){}if(running)startST(true)}
+setInterval(()=>{if(running&&clk()){const p=curPos();if(p!==curI){idx=p;next()}}},15000);
+/* រូបថតលើវិដេអូ */
+function setOvl(i){if(!isAdm())return;
+  const f=i.files[0];i.value='';if(!f)return;const im=new Image();
+  im.onload=()=>{const k=Math.min(1,800/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=im.width*k;c.height=im.height*k;
+    c.getContext('2d').drawImage(im,0,0,c.width,c.height);
+    try{localStorage.setItem('ovl',c.toDataURL('image/jpeg',.85))}catch(e){alert('⚠️ រក្សាទុករូបមិនបាន')}loadSettings()};
+  im.src=URL.createObjectURL(f);
+}
+function clearOvl(){if(!isAdm())return;try{localStorage.removeItem('ovl')}catch(e){}loadSettings()}
+function loadSettings(){
+  const g=k=>{try{return localStorage.getItem(k)||''}catch(e){return''}};
+  const l=g('logo'),o=g('ovl');
+  if(l)$('logo').src=l;$('logo').classList.toggle('hide',!l);
+  if(o)$('ovl').src=o;$('ovl').classList.toggle('hide',!o);
+  $('txt').value=g('txt');$('txt2').value=g('txt2');$('sz1').value=g('sz1')||'m';$('sz2').value=g('sz2')||'m';$('spd').value=g('spd')||15;
+  try{sched=JSON.parse(g('sched')||'[]')}catch(e){sched=[]}
+  clock=g('clk')!=='0';$('clk').checked=clock;
+  const lt=g('ltxt');$('ltx').value=lt;$('ltxt').textContent=lt;$('ltxt').classList.toggle('hide',!lt);
+  setTick();drawSch();showStats();drawGames();
+}
+const getReg=()=>{try{return localStorage.getItem('reg')||''}catch(e){return''}};
+function startST(quiet){
+  if(!isAdm()&&!(getReg()&&allowed(getReg()))){if(quiet===undefined)alert(getReg()?'ឈ្មោះរបស់អ្នកមិនមាននៅក្នុងបញ្ជីអនុញ្ញាតទេ សូមចុះឈ្មោះដែលបានអនុញ្ញាត':'សូមចុះឈ្មោះ (ប្រអប់ខាងក្រោម) ជាមុនសិន ទើបអាចមើលបាន');return}
+  Q=buildQ();if(!Q.length){if(quiet===undefined)alert(isAdm()?'សូមបន្ថែមរូបថត វីដេអូ ឬ YouTube មុន':'មិនទាន់មានកាលវិភាគសម្រាប់ចាក់');return}
+  if(quiet!=='auto')wantSound=true;
+  if(!viewed&&quiet!=='auto'){viewed=true;try{localStorage.setItem('views',+(localStorage.getItem('views')||0)+1)}catch(e){}showStats()}
+  stopST();running=true;idx=curPos();setTick();next();
+  let a=0;
+  const showAd=()=>{const el=$('ad'),A=hasRemote()?rads:ads;if(!A.length){el.classList.add('hide');return}
+    el.src=A[a++%A.length].src;el.classList.remove('hide')};
+  showAd();adTimer=setInterval(showAd,10000);
+}
+function stopST(){$('pt').classList.add('hide');running=false;clearTimeout(timer);clearInterval(adTimer);$('screen').innerHTML='';$('ad').classList.add('hide')}
+/* ===== ធ្វើសមកាលកម្ម៖ កាលវិភាគត្រូវបង្ហោះលើ server ដើម្បីឲ្យគ្រប់ឧបករណ៍ឃើញ ===== */
+function applyRemote(){
+  if(isAdm()||!remote)return;
+  const s=remote.settings||{};
+  $('txt').value=s.txt||'';$('txt2').value=s.txt2||'';$('sz1').value=s.sz1||'m';$('sz2').value=s.sz2||'m';$('spd').value=s.spd||15;
+  clock=s.clk=='1';$('clk').checked=clock;
+  if(s.logo)$('logo').src=s.logo;$('logo').classList.toggle('hide',!s.logo);
+  if(s.ovl)$('ovl').src=s.ovl;$('ovl').classList.toggle('hide',!s.ovl);
+  $('ltxt').textContent=s.ltxt||'';$('ltxt').classList.toggle('hide',!s.ltxt);
+  rads=(remote.ads||[]).map(f=>({src:/^(https?:|data:|\/|\.)/.test(f)?f:SVR+'/media/'+f,name:''}));
+  setTick();
+}
+async function setSvr(){
+  const v=$('svr').value.trim();
+  if(!ONHTTP&&v){const u=(/^https?:\/\//.test(v)?v:'http://'+v).replace(/\/+$/,'');SVR=u;try{localStorage.setItem('svr',u)}catch(e){}}
+  remote=null;await loadRemote();
+}
+async function fetchCfg(){ // ១) schedule.json ក្បែរ index.html (មិនត្រូវការ server)  ២) server (ជម្រើស)
+  try{const r=await fetch('schedule.json?'+Date.now(),{cache:'no-store'});if(r.ok){const j=await r.json();if(j&&Array.isArray(j.schedule))return j}}catch(e){}
+  if(ONHTTP||SVR!=='http://localhost:3000'){try{const r=await fetch(SVR+'/api/public',{cache:'no-store'});if(r.ok){const j=await r.json();if(j&&Array.isArray(j.schedule))return j}}catch(e){}}
+  return null;
+}
+async function loadRemote(){
+  const r=await fetchCfg();syncErr=false;
+  if(!r){$('sync').textContent=remote?'':'ℹ️ មិនទាន់មានកាលវិភាគដែលបានផ្សព្វផ្សាយ';drawSch();return}
+  $('sync').textContent=`✅ កាលវិភាគ ${r.schedule.length} កម្មវិធី · ធ្វើបច្ចុប្បន្នភាព ${new Date().toLocaleTimeString()}`;
+  if(remote&&r.ver!==undefined&&remote.ver===r.ver)return;
+  remote=r;if(isAdm())return;
+  applyRemote();drawSch();if(running)startST('auto');
+}
+async function exportCfg(){
+  if(!isAdm())return;const P=$('pub');P.style.color='#8b949e';P.textContent='⏳ កំពុងរៀបចំ...';
+  const small=(src,max)=>new Promise(res=>{const im=new Image();im.onload=()=>{const k=Math.min(1,max/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=Math.round(im.width*k);c.height=Math.round(im.height*k);c.getContext('2d').drawImage(im,0,0,c.width,c.height);res(c.toDataURL('image/jpeg',.8))};im.onerror=()=>res('');im.src=src});
+  const schedule=[];let skipped=0;
+  for(const s of sched){
+    const it=items.find(i=>i.id==s.itemId)||items.find(i=>i.name==s.name),yt=it&&it.type=='yt'?it.src:ytOf(s),b={day:s.day,time:s.time||'00:00',title:s.title||''};
+    if(yt)schedule.push({...b,type:'yt',yt,ytdur:s.ytdur||(it&&it.dur)||60});
+    else if(s.url)schedule.push({...b,type:s.utype||'vid',url:s.url});
+    else if(it&&it.type=='img'){const d=await small(it.src,1280);d?schedule.push({...b,type:'img',url:d}):skipped++}
+    else skipped++; // ឯកសារវិដេអូពីទូរស័ព្ទ ចែករំលែកមិនបាន
+  }
+  const adl=[];for(const a of ads){const d=await small(a.src,600);if(d)adl.push(d)}
+  const settings={};['logo','ovl','txt','txt2','sz1','sz2','spd','clk','ltxt'].forEach(k=>{try{settings[k]=localStorage.getItem(k)||''}catch(e){}});
+  const blob=new Blob([JSON.stringify({ver:Date.now(),settings,schedule,ads:adl})],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='schedule.json';a.click();
+  P.style.color=skipped?'#d29922':'#3fb950';
+  P.textContent=`✅ បង្កើត schedule.json (${schedule.length} កម្មវិធី, ពាណិជ្ជកម្ម ${adl.length}) ។ ដាក់ក្បែរ index.html លើ hosting។`+(skipped?` ⚠️ ${skipped} កម្មវិធីជាវិដេអូពីទូរស័ព្ទ មិនអាចចែករំលែកបាន — ប្រើតំណ YouTube ឬ .mp4 ជំនួស`:'');
+}
+async function publish(){
+  if(!isAdm())return;
+  const P=$('pub');let key='';try{key=localStorage.getItem('pk')||''}catch(e){}
+  if(!key){key=(prompt('បញ្ចូល Publish key (បង្ហាញក្នុង Terminal ពេលដំណើរការ node Server.js)')||'').trim();if(!key)return}
+  P.style.color='#8b949e';
+  const bad=()=>{try{localStorage.removeItem('pk')}catch(e){}throw new Error('Publish key មិនត្រឹមត្រូវ')};
+  try{
+    let old={};try{old=(await (await fetch(SVR+'/api/public',{cache:'no-store'})).json()).files||{}}catch(e){}
+    const files={},up=async(it,name)=>{ // ផ្ទុកឡើងម្តង ហើយប្រើឡើងវិញបើមានលើ server រួច
+      const b=await (await fetch(it.src)).blob(),k=name+'|'+b.size;
+      if(files[k])return files[k];
+      if(old[k]){files[k]=old[k];return old[k]}
+      P.textContent='⏳ កំពុងផ្ទុកឡើង៖ '+name;
+      const r=await fetch(SVR+'/api/media?name='+encodeURIComponent(name),{method:'POST',headers:{'x-key':key,'content-type':b.type||'application/octet-stream'},body:b});
+      if(r.status==401)bad();if(!r.ok)throw new Error('ផ្ទុកឡើងមិនបាន៖ '+name);
+      return files[k]=(await r.json()).id};
+    const schedule=[];
+    for(const s of sched){
+      const it=items.find(i=>i.id==s.itemId)||items.find(i=>i.name==s.name),yt=it&&it.type=='yt'?it.src:ytOf(s);
+      const base={day:s.day,time:s.time||'00:00',title:s.title||''};
+      if(yt){schedule.push({...base,type:'yt',yt,ytdur:s.ytdur||(it&&it.dur)||60});continue}
+      if(it)schedule.push({...base,type:it.type,file:await up(it,it.name)});
+    }
+    const adf=[];for(const a of ads)adf.push(await up(a,a.name));
+    const settings={};['logo','ovl','txt','txt2','sz1','sz2','spd','clk','ltxt'].forEach(k=>{try{settings[k]=localStorage.getItem(k)||''}catch(e){}});
+    const r=await fetch(SVR+'/api/publish',{method:'POST',headers:{'x-key':key,'content-type':'application/json'},body:JSON.stringify({settings,schedule,ads:adf,files})});
+    if(r.status==401)bad();if(!r.ok)throw new Error('ផ្សព្វផ្សាយមិនបាន');
+    try{localStorage.setItem('pk',key)}catch(e){}
+    P.style.color='#3fb950';P.textContent='✅ ផ្សព្វផ្សាយរួច៖ '+schedule.length+' កម្មវិធី ឧបករណ៍ដទៃនឹងឃើញក្នុងរយៈ ១ នាទី';
+  }catch(e){P.style.color='#f85149';P.textContent='⚠️ '+(e instanceof TypeError?'មិនអាចភ្ជាប់ server (ត្រូវដំណើរការ node Server.js)':e.message)}
+}
+/* ===== ចុះឈ្មោះដោយឈ្មោះ / admin (ក្នុង index.html) ===== */
+const H=s=>{let a=3735928559,b=1103547991;for(let i=0;i<s.length;i++){const c=s.charCodeAt(i);a=Math.imul(a^c,2654435761);b=Math.imul(b^c,1597334677)}a=Math.imul(a^(a>>>16),2246822507)^Math.imul(b^(b>>>13),3266489909);b=Math.imul(b^(b>>>16),2246822507)^Math.imul(a^(a>>>13),3266489909);return(4294967296*(2097151&b)+(a>>>0)).toString(16)};
+const ADMIN_H='26214783468e3'; // hash only — the admin name itself is not written in this file
+const NM=/^[^\u0000-\u001F<>]{2,40}$/;
+const getUsers=()=>{try{return JSON.parse(localStorage.getItem('users')||'[]')}catch(e){return[]}};
+/* name.js = ត្រាអ្នកអនុញ្ញាត៖ window.TV_NAMES=[...] ។ បើទទេ អ្នកណាក៏ចុះឈ្មោះមើលបាន */
+const nmList=()=>(Array.isArray(window.TV_NAMES)?window.TV_NAMES:[]).map(x=>String(x).trim().toLowerCase()).filter(Boolean);
+const allowed=n=>!nmList().length||nmList().includes(String(n).trim().toLowerCase());
+function join(){
+  const v=$('who').value.replace(/[\u200B-\u200D\uFEFF]/g,'').trim();$('who').value='';if(!v)return;
+  const m=$('msg');
+  if(H(v)===ADMIN_H){adminOn=true;$('adm').classList.remove('hide');loadSettings();m.style.color='#3fb950';m.textContent='(ត្រឹមត្រូវហើយ)';startST(true);return}
+  if(NM.test(v)){
+    if(!allowed(v)){m.style.color='#f85149';m.textContent='⚠️ ឈ្មោះនេះមិនមាននៅក្នុងបញ្ជីអនុញ្ញាតទេ';return}
+    const reg=getReg();
+    if(reg&&allowed(reg)){m.style.color='#3fb950';m.textContent='✅ ចុះឈ្មោះរួចហើយ ('+reg+')';startST(true);return} // ចុះឈ្មោះម្តងហើយ មិនចុះម្តងទៀត
+    const u=getUsers();
+    if(!u.some(x=>(x.name||x.email)==v)){u.push({name:v,time:new Date().toISOString()});try{localStorage.setItem('users',JSON.stringify(u))}catch(x){}}
+    try{localStorage.setItem('reg',v)}catch(x){}
+    m.style.color='#3fb950';m.textContent='✅ ចុះឈ្មោះបានសម្រេច';showStats();startST(true);return;
+  }
+  m.style.color='#f85149';m.textContent='⚠️ សូមបញ្ចូលឈ្មោះ (២–៤០ តួអក្សរ)';
+}
+function showUsers(){if(!isAdm())return;
+  const u=getUsers(),L=$('users');L.innerHTML='';
+  u.forEach(x=>{const d=document.createElement('div');d.textContent=(x.name||x.email)+'  ·  '+x.time.slice(0,10);L.appendChild(d)});
+  if(!u.length)L.innerHTML='<div>គ្មាន</div>';
+}
+function dl(name,text){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type:'text/javascript'}));a.download=name;a.click()}
+function exportNames(){
+  if(!isAdm())return;
+  const L=[...new Set($('nmlist').value.split('\n').map(x=>x.trim()).filter(Boolean))];
+  dl('name.js','// ត្រាអ្នកអនុញ្ញាត៖ មានតែឈ្មោះក្នុងបញ្ជីនេះទេដែលមើលបាន (ទទេ = អ្នកណាក៏មើលបាន)\nwindow.TV_NAMES='+JSON.stringify(L,null,1)+';\n');
+  $('gmsg').textContent='✅ បង្កើត name.js ('+L.length+' ឈ្មោះ) ។ ដាក់ក្បែរ index.html លើ hosting។';
+}
+function addLocalNames(){
+  if(!isAdm())return;
+  const cur=$('nmlist').value.split('\n').map(x=>x.trim()).filter(Boolean);
+  getUsers().forEach(u=>{const n=u.name||u.email;if(n&&!cur.includes(n))cur.push(n)});
+  $('nmlist').value=cur.join('\n');
+}
+/* Game.js = តំណហ្គេម .apk ៖ window.TV_GAMES=[{t:'ឈ្មោះ',u:'https://.../game.apk'}] */
+let games=[];
+try{const g=JSON.parse(localStorage.getItem('games')||'null');games=Array.isArray(g)?g:(Array.isArray(window.TV_GAMES)?window.TV_GAMES.slice():[])}catch(e){}
+const isApk=u=>/^https?:\/\/[^\s"'<>]+\.apk([?#][^\s"'<>]*)?$/i.test(u);
+const saveGames=()=>{try{localStorage.setItem('games',JSON.stringify(games))}catch(e){}};
+const gameList=()=>isAdm()?games:(Array.isArray(window.TV_GAMES)?window.TV_GAMES:[]);
+function drawGames(){
+  const L=$('games');L.innerHTML='';
+  gameList().forEach((g,i)=>{
+    if(!g||!isApk(String(g.u||'')))return;
+    const d=document.createElement('div'),sp=document.createElement('span'),a=document.createElement('a');
+    d.style.display='flex';d.style.gap='8px';sp.style.flex='1';sp.textContent='🎮 '+String(g.t||'').slice(0,60);
+    a.href=g.u;a.textContent='⬇️ ទាញយក .apk';a.rel='noopener noreferrer';a.target='_blank';a.className='btn b';a.style.textDecoration='none';
+    d.appendChild(sp);d.appendChild(a);
+    if(isAdm()){const b=document.createElement('button');b.className='btn r';b.textContent='✕';b.onclick=()=>{if(isAdm()&&confirm('លុប?')){games.splice(i,1);saveGames();drawGames()}};d.appendChild(b)}
+    L.appendChild(d);
+  });
+  if(!L.children.length)L.innerHTML='<div>មិនទាន់មានហ្គេម</div>';
+}
+function addGame(){
+  if(!isAdm())return;
+  const t=$('gt').value.trim(),u=$('gl').value.trim();
+  if(!t)return alert('សូមបញ្ចូលឈ្មោះហ្គេម');
+  if(!isApk(u))return alert('តំណត្រូវចាប់ផ្តើមដោយ https:// ហើយបញ្ចប់ដោយ .apk');
+  games.push({t,u});saveGames();$('gt').value='';$('gl').value='';drawGames();
+}
+function exportGames(){
+  if(!isAdm())return;
+  const L=games.filter(g=>g&&isApk(String(g.u||'')));
+  dl('Game.js','// តំណហ្គេម .apk (ដាក់ក្បែរ index.html)\nwindow.TV_GAMES='+JSON.stringify(L,null,1)+';\n');
+  $('gmsg').textContent='✅ បង្កើត Game.js ('+L.length+' ហ្គេម) ។ ដាក់ក្បែរ index.html លើ hosting។';
+}
+$('who').addEventListener('keydown',e=>{if(e.key=='Enter')join()});
+try{const r=localStorage.getItem('reg');if(r){$('msg').style.color='#3fb950';$('msg').textContent='✅ ចុះឈ្មោះរួចហើយ ('+r+')'}}catch(e){}
+$('nmlist').value=(Array.isArray(window.TV_NAMES)?window.TV_NAMES:[]).join('\n');
+
+init().catch(()=>{}).then(loadRemote).then(()=>{if(clk())startST('auto')});if(ONHTTP)$('svr').classList.add('hide');loadSettings();setInterval(loadRemote,60000);
+</script>
+</body>
+</html>
