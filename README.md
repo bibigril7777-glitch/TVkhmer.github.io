@@ -1,30 +1,28 @@
 # Cambodia M3 TV
 
-## Run locally
-1. Install Node.js 18 or newer.
-2. Copy `.env.example` to `.env`.
-3. Set `ADMIN_USERNAME=phengchen888`, a strong `ADMIN_PASSWORD`, and a long random `SESSION_SECRET` in `.env`. Admin login does not need Gmail.
-4. Optional: set `GOOGLE_CLIENT_ID` and the same value in `name.js` for Google Sign-In.
-5. In Google Cloud Console, configure an OAuth 2.0 Web client and add your site origin (for local development: `http://localhost:3000`) to Authorized JavaScript origins.
-6. Run:
+## របៀបដំណើរការ
+1. ដំឡើង Node.js 18 ឬថ្មីជាងនេះ។
+2. ចម្លង `.env.example` ទៅជា `.env`។
+3. ប្ដូរ `ADMIN_PASSWORD` និង `SESSION_SECRET` ទៅជាពាក្យសម្ងាត់/សោសម្ងាត់រឹងមាំ។ Admin ចូលដោយឈ្មោះ `phengchen888` មិនត្រូវការ Gmail ទេ។
+4. បើចង់ប្រើ Google Sign-In សូមកំណត់ `GOOGLE_CLIENT_ID` ក្នុង `.env` និង `name.js`។ ការចុះឈ្មោះធម្មតាត្រូវការឈ្មោះ អ៊ីមែល និងពាក្យសម្ងាត់។ Admin អនុម័តគណនីមុនពេលមើលប៉ុស្តិ៍ទូរទស្សន៍។
+5. ដំណើរការ៖
    ```bash
    npm install
    npm start
    ```
-7. Open `http://localhost:3000`. Sign in as Admin using username `phengchen888` and the password in `.env`. Regular viewers can register with their name and email/password or use Google Sign-In; Admin must approve them before they can view channel streams.
+6. បើក `http://localhost:3000`។
 
-## Included
-- Responsive Khmer TV station UI, Cambodia timezone clock
-- Admin-only logo upload, custom animated caption below logo, ticker text, articles/photos/videos and weekly schedules
-- Upload video files from a phone or use a direct playable video URL; video playback loops and scheduled streams can take over at their scheduled time
-- Player controls for play/resume, mute/unmute and stop; schedule categories include animal documentaries, series, comedy, movies, cartoons, entertainment and story recaps
-- Weekly schedule Monday–Sunday; video schedule hidden until a user signs in
-- Email/password accounts and Google Identity Services sign-in
-- Parsed channel entries from public country M3U playlists for Cambodia, Myanmar, India, China, Taiwan, Indonesia and Hong Kong from IPTV-org
+## មុខងារ
+- Admin អាចបង្ហោះវីដេអូ/រូបថតពីទូរស័ព្ទ ឬបញ្ចូល URL វីដេអូផ្ទាល់ (ឧ. MP4 ឬ M3U8) និង YouTube URL។
+- ប្រភេទមាតិកា៖ ឯកសារ, សត្វ, រឿងភាគ, ប្លុកកំប្លែង, ភាពយន្ត, តុក្កតា, កម្សាន្ត, សម្រាយរឿង។
+- កាលវិភាគប្រចាំសប្ដាហ៍តាមម៉ោងកម្ពុជា។ វីដេអូដែលបានបង្ហោះអាចជ្រើសភ្ជាប់ទៅកាលវិភាគ។ ការលុបកាលវិភាគមិនលុបវីដេអូពីបណ្ណាល័យទេ។
+- បើមិនមានកម្មវិធីកំណត់ពេលកំពុងផ្សាយ វីដេអូក្នុងបណ្ណាល័យនឹងចាក់បន្តជុំរហូតដល់កម្មវិធីបន្ទាប់។
+- ប៊ូតុងចាក់/បន្ត, បិទ/បើកសំឡេង, បញ្ឈប់ និងបើកតំណវីដេអូ។
+- អត្ថបទផ្ទាល់ខ្លួនក្រោម Logo មានចលនា; អត្ថបទខាងលើ/ខាងក្រោមអាចកែបានក្នុង Admin។
+- បញ្ជី IPTV-org សាធារណៈសម្រាប់ Cambodia, Myanmar, India, China, Taiwan, Indonesia និង Hong Kong។
 
-## Important limitations / production checklist
-- The server parses public `.m3u` country playlists into individual stream links (up to 120 per country). Some entries are not direct `.m3u8` streams, and browser playback may fail due to format, CORS, geo-blocking, or upstream outages. A production player can add hls.js for compatible HLS streams.
-- `iptv-org` is a community playlist project. Only publish/stream channels you have permission to use. No IPTV.com scraping or unverified streams are included.
-- The sample stores users and content in `data/db.json` and uploads in `uploads/`. Use a database, HTTPS, secure session store, backups, rate limiting, CSRF protections, file scanning, and storage limits before production deployment.
-- Email/password registration does not verify email ownership. Google Sign-In verifies Google accounts when configured.
-- Anyone can register, but viewing channel streams requires Admin approval. Keep `.env` private. Direct video URLs must point to a playable media file/stream (such as MP4 or a compatible HLS URL), not a normal webpage.
+## ចំណាំសំខាន់
+- ការគ្រប់គ្រងនេះមិនអាចលុបពាណិជ្ជកម្ម ឬអក្សរដែលបានបញ្ចូលក្នុងវីដេអូដើមបានទេ។ YouTube អាចបង្ហាញពាណិជ្ជកម្មដោយ YouTube ផ្ទាល់; ដើម្បីមិនឱ្យមានអក្សរបន្ថែម សូមប្រើឯកសារវីដេអូដើម ឬ URL ដែលអ្នកមានសិទ្ធិប្រើ។
+- URL ត្រូវជាតំណដែល browser អាចចាក់បានដោយផ្ទាល់។ តំណទំព័រធម្មតា មិនមែនជា MP4/M3U8 stream ទេ។ HLS/M3U8 អាចត្រូវការកម្មវិធីចាក់ HLS បន្ថែម ហើយមិនមែនគ្រប់ browser អាចចាក់បានទេ។
+- ឯកសារដែលបង្ហោះរក្សាទុកក្នុង `uploads/` និងទិន្នន័យក្នុង `data/db.json`; កុំលុបថតទាំងនេះបើចង់រក្សាវីដេអូ។ កំណែសាកល្បងនេះមិនទាន់មាន database production, backups, rate limiting ឬ malware scanning ទេ។
+- ផ្សាយតែមាតិកាដែលអ្នកមានសិទ្ធិប្រើប្រាស់។
