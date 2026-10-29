@@ -1,91 +1,30 @@
-# ការណែនាំប្រើប្រាស់កម្មវិធីទូរទស្សន៍
+# Cambodia M3 TV
 
-កម្មវិធីទូរទស្សន៍ IPTV ដែលមាន ២ ផ្នែក៖
-1. **ទូរទស្សន៍ពិភពលោក** – មើលប៉ុស្តិ៍ពី ២៦ ប្រទេស/ភាសា (ទាញពី iptv-org)
-2. **ស្ថានីយខ្ញុំ** – បង្កើតស្ថានីយទូរទស្សន៍ផ្ទាល់ខ្លួន
-
-## ឯកសារ
-
-| ឯកសារ | មុខងារ |
-|---|---|
-| `index.html` | កម្មវិធីទូរទស្សន៍ (ទំព័របណ្ដាញ) |
-| `Server.js` | server ផ្ដល់បញ្ជីប៉ុស្តិ៍ `.m3u8` និងបើក `index.html` |
-| `README.md` | ការណែនាំនេះ |
-
-## របៀបដំណើរការ
-
-### វិធីទី ១៖ ប្រើ Server (ណែនាំ)
-1. ដំឡើង [Node.js](https://nodejs.org) ជំនាន់ 18 ឬថ្មីជាងនេះ
-2. ដាក់ `Server.js` និង `index.html` ក្នុងថតតែមួយ
-3. បើក Terminal ក្នុងថតនោះ ហើយវាយ៖
+## Run locally
+1. Install Node.js 18 or newer.
+2. Copy `.env.example` to `.env`.
+3. Set `ADMIN_USERNAME=phengchen888`, a strong `ADMIN_PASSWORD`, and a long random `SESSION_SECRET` in `.env`. Admin login does not need Gmail.
+4. Optional: set `GOOGLE_CLIENT_ID` and the same value in `name.js` for Google Sign-In.
+5. In Google Cloud Console, configure an OAuth 2.0 Web client and add your site origin (for local development: `http://localhost:3000`) to Authorized JavaScript origins.
+6. Run:
+   ```bash
+   npm install
+   npm start
    ```
-   node Server.js
-   ```
-4. បើកកម្មវិធីរុករក៖ **http://localhost:3000**
+7. Open `http://localhost:3000`. Sign in as Admin using username `phengchen888` and the password in `.env`. Regular viewers can register with their name and email/password or use Google Sign-In; Admin must approve them before they can view channel streams.
 
-ប្តូរ port បាន៖ `PORT=8080 node Server.js`
+## Included
+- Responsive Khmer TV station UI, Cambodia timezone clock
+- Admin-only logo upload, custom animated caption below logo, ticker text, articles/photos/videos and weekly schedules
+- Upload video files from a phone or use a direct playable video URL; video playback loops and scheduled streams can take over at their scheduled time
+- Player controls for play/resume, mute/unmute and stop; schedule categories include animal documentaries, series, comedy, movies, cartoons, entertainment and story recaps
+- Weekly schedule Monday–Sunday; video schedule hidden until a user signs in
+- Email/password accounts and Google Identity Services sign-in
+- Parsed channel entries from public country M3U playlists for Cambodia, Myanmar, India, China, Taiwan, Indonesia and Hong Kong from IPTV-org
 
-### វិធីទី ២៖ បើកផ្ទាល់
-ចុចពីរដងលើ `index.html` (ត្រូវការអ៊ីនធឺណិត) ។ កម្មវិធីទាញបញ្ជីពី iptv-org ដោយផ្ទាល់។
-
-## ១. ទូរទស្សន៍ពិភពលោក
-
-1. ជ្រើសប្រទេសពីបញ្ជី
-2. ស្វែងរកឈ្មោះប៉ុស្តិ៍ក្នុងប្រអប់ស្វែងរក (បើចង់)
-3. ចុចលើឈ្មោះប៉ុស្តិ៍ដើម្បីចាក់
-
-**ប្រទេសដែលមាន៖** កម្ពុជា ចិន វៀតណាម ឡាវ មីយ៉ាន់ម៉ា សិង្ហបុរី ជប៉ុន កូរ៉េខាងត្បូង កូរ៉េខាងជើង សហរដ្ឋអាមេរិក រុស្ស៊ី អ៊ុយក្រែន ស៊ីរី អាហ្វ្រិកខាងត្បូង អ៊ីរ៉ាក់ អ៊ីរ៉ង់ អ៊ីស្រាអែល ស៊ុយអែត ឥណ្ឌា តៃវ៉ាន់ ឥណ្ឌូនេស៊ី ហ្វីលីពីន ម៉ាឡេស៊ី អង់គ្លេស (ភាសា) អេស្ប៉ាញ កាតា
-
-> ប៉ុស្តិ៍ខ្លះអាចមិនដំណើរការ ព្រោះ link ផ្លាស់ប្តូរ ឬត្រូវបានរារាំងតាមតំបន់។ សូមសាកល្បងប៉ុស្តិ៍ផ្សេង។
-
-## ២. ស្ថានីយខ្ញុំ
-
-| មុខងារ | របៀបប្រើ |
-|---|---|
-| 🏷️ **Logo** | ជ្រើសរូបពីទូរស័ព្ទ → បង្ហាញជ្រុងខាងលើស្តាំ |
-| 🖼️ **រូបថត** | ជ្រើសរូបច្រើនបាន → កំណត់វិនាទីក្នុងមួយរូប |
-| 🎞️ **វីដេអូ** | ជ្រើសវីដេអូពីទូរស័ព្ទ → ចាក់ចប់ហើយបន្តទៅមុខទៀត |
-| ▶️ **YouTube** | បិទភ្ជាប់តំណ → កំណត់រយៈពេល (វិនាទី) → ចុច "បន្ថែម" |
-| 📢 **ពាណិជ្ជកម្ម** | ជ្រើសរូប → បង្ហាញជ្រុងខាងក្រោមឆ្វេង ប្តូររៀងរាល់ ១០ វិនាទី |
-| 📝 **អក្សរហូរ** | វាយអត្ថបទ → ហូរពីស្តាំទៅឆ្វេងខាងក្រោម, កែល្បឿនបាន |
-
-### ជំហានចាក់ផ្សាយ
-1. បន្ថែមរូបថត វីដេអូ ឬតំណ YouTube យ៉ាងតិច ១
-2. (បើចង់) ដាក់ Logo ពាណិជ្ជកម្ម និងអក្សរហូរ
-3. ចុច **▶ ចាក់ផ្សាយ**
-4. ចុច **⛶ ពេញអេក្រង់** ដើម្បីមើលធំ
-5. ចុច **⏹ ឈប់** ពេលចង់បញ្ចប់
-
-ចុច **✕** ក្បែរធាតុណាមួយដើម្បីលុប។
-
-## ចំណាំសំខាន់
-
-- **Logo និងអក្សរហូរ** ត្រូវបានចងចាំក្នុងកម្មវិធីរុករក
-- **រូបថត វីដេអូ ពាណិជ្ជកម្ម** ត្រូវបន្ថែមឡើងវិញរាល់ពេលបើកថ្មី
-- **YouTube** ចាក់តាមរយៈពេលដែលអ្នកកំណត់ ព្រោះប្រព័ន្ធមិនដឹងពេលវីដេអូចប់
-- វីដេអូខ្លះអាចមិនអនុញ្ញាតឲ្យ embed
-- កម្មវិធីរុករកខ្លះរារាំងការចាក់ស្វ័យប្រវត្តិ ត្រូវចុចប៊ូតុងចាក់ម្តង
-
-## បញ្ជី m3u8 ពី Server
-
-ចូលតាម `http://localhost:3000/playlist/<ឈ្មោះ>.m3u8`
-
-`cambodia` `myanmar` `indian` `chinese` `taiwan` `indonesia` `russian` `philippines` `malaysian` `japanese` `america` `english` `spain` `ukraine` `iran` `iraq` `qatar` `vietnam` `laos` `singapore` `southkorea` `northkorea` `syria` `southafrica` `israel` `sweden`
-
-មើលបញ្ជីឈ្មោះទាំងអស់៖ `http://localhost:3000/api/playlists`
-
-អាចប្រើ link ទាំងនេះក្នុង VLC ឬ IPTV app ផ្សេងបាន។
-
-## ដោះស្រាយបញ្ហា
-
-| បញ្ហា | ដំណោះស្រាយ |
-|---|---|
-| បញ្ជីប៉ុស្តិ៍ទទេ | ពិនិត្យអ៊ីនធឺណិត ឬ server ដំណើរការរឺទេ |
-| `node` មិនស្គាល់ | ដំឡើង Node.js ហើយបើក Terminal ថ្មី |
-| `fetch is not defined` | Node.js ចាស់ពេក ត្រូវការជំនាន់ 18+ |
-| ប៉ុស្តិ៍មិនចាក់ | សាកល្បងប៉ុស្តិ៍ផ្សេង |
-| Port ជាប់ | ប្រើ `PORT=8080 node Server.js` |
-
-## ប្រភពទិន្នន័យ
-
-បញ្ជីប៉ុស្តិ៍ពី [iptv-org](https://github.com/iptv-org/iptv) ។ សូមប្រើប្រាស់ឲ្យស្របតាមច្បាប់នៃប្រទេសរបស់អ្នក។
+## Important limitations / production checklist
+- The server parses public `.m3u` country playlists into individual stream links (up to 120 per country). Some entries are not direct `.m3u8` streams, and browser playback may fail due to format, CORS, geo-blocking, or upstream outages. A production player can add hls.js for compatible HLS streams.
+- `iptv-org` is a community playlist project. Only publish/stream channels you have permission to use. No IPTV.com scraping or unverified streams are included.
+- The sample stores users and content in `data/db.json` and uploads in `uploads/`. Use a database, HTTPS, secure session store, backups, rate limiting, CSRF protections, file scanning, and storage limits before production deployment.
+- Email/password registration does not verify email ownership. Google Sign-In verifies Google accounts when configured.
+- Anyone can register, but viewing channel streams requires Admin approval. Keep `.env` private. Direct video URLs must point to a playable media file/stream (such as MP4 or a compatible HLS URL), not a normal webpage.
