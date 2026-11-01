@@ -1,5 +1,5 @@
 {
-  "ver": 1,
+  "ver": 3,
   "settings": {
     "logo": "",
     "ovl": "",
@@ -98,18 +98,19 @@
     },
     {
       "day": 6,
-      "time": "08:00",
-      "title": "តន្ត្រីព្រឹកអាទិត្យ",
+      "time": "20:00",
+      "title": "វីដេអូ YouTube ទី ១",
       "type": "yt",
-      "yt": "REPLACE_ID_11",
+      "yt": "FD6obDpRuQY",
       "ytdur": 300
     },
     {
       "day": 6,
-      "time": "20:00",
-      "title": "រូបភាពពិសេស",
-      "type": "img",
-      "url": "images/sunday.jpg"
+      "time": "22:00",
+      "title": "វីដេអូ YouTube ទី ២",
+      "type": "yt",
+      "yt": "usXLWRzFsAo",
+      "ytdur": 300
     }
   ],
   "ads": []
