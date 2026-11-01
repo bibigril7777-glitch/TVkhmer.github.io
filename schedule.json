@@ -1,0 +1,116 @@
+{
+  "ver": 1,
+  "settings": {
+    "logo": "",
+    "ovl": "",
+    "txt": "សូមស្វាគមន៍មកកាន់ស្ថានីយទូរទស្សន៍របស់យើង",
+    "txt2": "",
+    "sz1": "m",
+    "sz2": "m",
+    "spd": "15",
+    "clk": "1",
+    "ltxt": ""
+  },
+  "schedule": [
+    {
+      "day": 0,
+      "time": "08:00",
+      "title": "ព័ត៌មានព្រឹក ច័ន្ទ",
+      "type": "vid",
+      "url": "videos/monday-morning.mp4"
+    },
+    {
+      "day": 0,
+      "time": "20:00",
+      "title": "កម្មវិធីល្ងាច ច័ន្ទ",
+      "type": "vid",
+      "url": "videos/monday-evening.mp4"
+    },
+    {
+      "day": 1,
+      "time": "08:00",
+      "title": "ព័ត៌មានព្រឹក អង្គារ",
+      "type": "vid",
+      "url": "videos/tuesday-morning.mp4"
+    },
+    {
+      "day": 1,
+      "time": "20:00",
+      "title": "កម្មវិធីល្ងាច អង្គារ",
+      "type": "vid",
+      "url": "videos/tuesday-evening.mp4"
+    },
+    {
+      "day": 2,
+      "time": "08:00",
+      "title": "ព័ត៌មានព្រឹក ពុធ",
+      "type": "vid",
+      "url": "videos/wednesday-morning.mp4"
+    },
+    {
+      "day": 2,
+      "time": "20:00",
+      "title": "កម្មវិធីល្ងាច ពុធ",
+      "type": "vid",
+      "url": "videos/wednesday-evening.mp4"
+    },
+    {
+      "day": 3,
+      "time": "08:00",
+      "title": "ព័ត៌មានព្រឹក ព្រហស្បតិ៍",
+      "type": "vid",
+      "url": "videos/thursday-morning.mp4"
+    },
+    {
+      "day": 3,
+      "time": "20:00",
+      "title": "កម្មវិធីល្ងាច ព្រហស្បតិ៍",
+      "type": "vid",
+      "url": "videos/thursday-evening.mp4"
+    },
+    {
+      "day": 4,
+      "time": "08:00",
+      "title": "ព័ត៌មានព្រឹក សុក្រ",
+      "type": "vid",
+      "url": "videos/friday-morning.mp4"
+    },
+    {
+      "day": 4,
+      "time": "20:00",
+      "title": "កម្មវិធីល្ងាច សុក្រ",
+      "type": "vid",
+      "url": "videos/friday-evening.mp4"
+    },
+    {
+      "day": 5,
+      "time": "08:00",
+      "title": "ព័ត៌មានព្រឹក សៅរ៍",
+      "type": "vid",
+      "url": "videos/saturday-morning.mp4"
+    },
+    {
+      "day": 5,
+      "time": "20:00",
+      "title": "កម្មវិធីល្ងាច សៅរ៍",
+      "type": "vid",
+      "url": "videos/saturday-evening.mp4"
+    },
+    {
+      "day": 6,
+      "time": "08:00",
+      "title": "តន្ត្រីព្រឹកអាទិត្យ",
+      "type": "yt",
+      "yt": "REPLACE_ID_11",
+      "ytdur": 300
+    },
+    {
+      "day": 6,
+      "time": "20:00",
+      "title": "រូបភាពពិសេស",
+      "type": "img",
+      "url": "images/sunday.jpg"
+    }
+  ],
+  "ads": []
+}
