@@ -5,6 +5,13 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 
+// ---- Secret API key: environment variable API_KEY, or secrets.js (never sent to browsers) ----
+let API_KEY = process.env.API_KEY || '';
+if (!API_KEY) { try { API_KEY = String(require('./secrets.js').API_KEY || '').trim(); } catch (e) {} }
+// Use apiFetch(url, options) for server-side calls to the service this key belongs to.
+const apiHeaders = (extra = {}) => ({ ...(API_KEY ? { Authorization: `Bearer ${API_KEY}` } : {}), ...extra });
+const apiFetch = (url, opts = {}) => fetch(url, { ...opts, headers: apiHeaders(opts.headers) });
+
 const PORT = process.env.PORT || 3000;
 const BASE = 'https://iptv-org.github.io/iptv';
 
@@ -105,6 +112,10 @@ mkServer(async (req, res) => {
       fs.readdirSync(MD).forEach(f => { if (!used.has(f)) fs.unlink(path.join(MD, f), () => {}); });
       return send(res, 200, 'application/json', JSON.stringify({ ok: true, count: schedule.length }));
     }
+    if (p === '/api/key-status' && req.method === 'GET') { // admin check only; the key itself is never returned
+      if (!keyOk(req)) return send(res, 401, 'application/json', '{"error":"key"}');
+      return send(res, 200, 'application/json', JSON.stringify({ configured: !!API_KEY, length: API_KEY.length }));
+    }
     if (p === '/api/playlists') return send(res, 200, 'application/json', JSON.stringify(Object.keys(PL)));
     const m = p.match(/^\/playlist\/([a-z]+)\.m3u8?$/i);
     if (m) {
@@ -124,6 +135,7 @@ mkServer(async (req, res) => {
   }
 }).listen(PORT, () => {
   console.log(`TV server running: http://localhost:${PORT}`);
+  console.log(API_KEY ? 'API key: configured (hidden)' : 'API key: not set (use API_KEY env var or secrets.js)');
   console.log(process.env.PUBLISH_KEY ? 'Publish key: (from PUBLISH_KEY environment variable)' : `Publish key (enter it once in the admin panel): ${KEY}`);
   const lan = Object.values(require('os').networkInterfaces()).flat().filter(n => n && n.family === 'IPv4' && !n.internal).map(n => `http://${n.address}:${PORT}`);
   console.log('Open on phone / other devices (same Wi-Fi): ' + (lan.join('   ') || '(no network found)'));
