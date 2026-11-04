@@ -9,8 +9,13 @@ const crypto = require('crypto');
 let API_KEY = process.env.API_KEY || '';
 if (!API_KEY) { try { API_KEY = String(require('./secrets.js').API_KEY || '').trim(); } catch (e) {} }
 // Use apiFetch(url, options) for server-side calls to the service this key belongs to.
-const apiHeaders = (extra = {}) => ({ ...(API_KEY ? { Authorization: `Bearer ${API_KEY}` } : {}), ...extra });
-const apiFetch = (url, opts = {}) => fetch(url, { ...opts, headers: apiHeaders(opts.headers) });
+// Second key (API_KEY_2): environment variable or secrets.js
+let API_KEY_2 = process.env.API_KEY_2 || '';
+if (!API_KEY_2) { try { API_KEY_2 = String(require('./secrets.js').API_KEY_2 || '').trim(); } catch (e) {} }
+const apiKeyOf = which => (which === 2 || which === 'secondary') ? API_KEY_2 : API_KEY;
+const apiHeaders = (extra = {}, which = 1) => ({ ...(apiKeyOf(which) ? { Authorization: `Bearer ${apiKeyOf(which)}` } : {}), ...extra });
+// apiFetch(url, options, which): which = 1 (API_KEY, default) or 2 (API_KEY_2)
+const apiFetch = (url, opts = {}, which = 1) => fetch(url, { ...opts, headers: apiHeaders(opts.headers, which) });
 
 const PORT = process.env.PORT || 3000;
 const BASE = 'https://iptv-org.github.io/iptv';
@@ -51,6 +56,19 @@ function keyOk(req) {
 const readBody = (req, max) => new Promise(r => { let s = '', big = false;
   req.on('data', c => { s += c; if (s.length > max) { big = true; req.destroy(); } });
   req.on('end', () => { try { r(big ? {} : JSON.parse(s || '{}')); } catch (e) { r({}); } }); });
+// ---- Live chat for viewers (polling API). Members-only when name.js has names; admin = publish key ----
+const CHATF = path.join(D, 'chat.json');
+let chat = [], chatId = 0;
+try { chat = JSON.parse(fs.readFileSync(CHATF, 'utf8')); chatId = chat.reduce((m, x) => Math.max(m, x.id), 0); } catch (e) { chat = []; }
+const saveChat = () => fs.writeFile(CHATF, JSON.stringify(chat), () => {});
+const chatRate = new Map();
+const cleanTxt = (v, n) => String(v || '').replace(/[\u0000-\u001F\u007F\u200B-\u200D\uFEFF]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, n);
+function allowedNames() {
+  for (const f of [path.join(D, 'site', 'name.js'), path.join(__dirname, 'name.js')]) {
+    try { const m = /window\.TV_NAMES\s*=\s*(\[[\s\S]*?\])\s*;/.exec(fs.readFileSync(f, 'utf8')); if (m) return JSON.parse(m[1]).map(x => String(x).trim().toLowerCase()).filter(Boolean); } catch (e) {}
+  }
+  return [];
+}
 function media(req, res, f) {
   const p = path.join(MD, path.basename(f));
   fs.stat(p, (e, st) => {
@@ -112,9 +130,61 @@ mkServer(async (req, res) => {
       fs.readdirSync(MD).forEach(f => { if (!used.has(f)) fs.unlink(path.join(MD, f), () => {}); });
       return send(res, 200, 'application/json', JSON.stringify({ ok: true, count: schedule.length }));
     }
+    if (p === '/api/site' && req.method === 'POST') { // admin publishes schedule.json + logo.png in one request
+      if (!keyOk(req)) return send(res, 401, 'application/json', '{"error":"key"}');
+      const b = await readBody(req, 6e6), cfg = b.cfg || {};
+      const okUrl = u => typeof u === 'string' && u.length < 3e6 && !u.includes('..') && (/^https?:\/\/[^\s"'<>]+$/i.test(u) || /^[\w\-./]+$/.test(u) || /^data:image\/(png|jpeg|webp|gif);base64,[A-Za-z0-9+/=]+$/.test(u));
+      const schedule = (Array.isArray(cfg.schedule) ? cfg.schedule : []).slice(0, 500).map(x => {
+        const e = { day: Math.max(0, Math.min(6, +x.day || 0)), time: /^\d{2}:\d{2}$/.test(x.time) ? x.time : '00:00', title: String(x.title || '').slice(0, 120), type: ['vid', 'img', 'yt'].includes(x.type) ? x.type : 'vid' };
+        if (e.type === 'yt') { e.yt = /^[\w-]{11}$/.test(x.yt || '') ? x.yt : ''; e.ytdur = Math.max(5, +x.ytdur || 60); } else e.url = okUrl(x.url) ? x.url : '';
+        return e;
+      }).filter(e => e.type === 'yt' ? e.yt : e.url);
+      const settings = {}; ['txt', 'txt2', 'sz1', 'sz2', 'spd', 'clk', 'ltxt'].forEach(k => { settings[k] = String((cfg.settings || {})[k] || '').slice(0, 1000); });
+      const nt = (cfg.settings || {}).notice; if (nt && typeof nt === 'object' && String(nt.text || '').trim()) settings.notice = { id: +nt.id || Date.now(), text: cleanTxt(nt.text, 300) };
+      const lg = String((cfg.settings || {}).logo || ''); settings.logo = lg === '' || okUrl(lg) ? lg : '';
+      const ov = String((cfg.settings || {}).ovl || ''); settings.ovl = ov === '' || okUrl(ov) ? ov : '';
+      const ads = (Array.isArray(cfg.ads) ? cfg.ads : []).slice(0, 100).filter(okUrl);
+      fs.mkdirSync(path.join(D, 'site'), { recursive: true });
+      let logoSaved = false;
+      const m = /^data:image\/png;base64,([A-Za-z0-9+/=]+)$/.exec(String(b.logo || ''));
+      if (m) { const buf = Buffer.from(m[1], 'base64'); if (buf.length < 3e6 && buf.slice(0, 4).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47]))) { fs.writeFileSync(path.join(D, 'site', 'logo.png'), buf); logoSaved = true; } }
+      else if (b.logo) return send(res, 400, 'application/json', '{"error":"logo must be a PNG data URL"}');
+      if (settings.logo === 'logo.png' && !fs.existsSync(path.join(D, 'site', 'logo.png')) && !fs.existsSync(path.join(__dirname, 'logo.png'))) settings.logo = '';
+      let names = null, games = null;
+      if (Array.isArray(b.names)) { names = [...new Set(b.names.map(x => String(x).trim()).filter(x => x && x.length <= 40))].slice(0, 2000); fs.writeFileSync(path.join(D, 'site', 'name.js'), 'window.TV_NAMES=' + JSON.stringify(names) + ';\n'); }
+      if (Array.isArray(b.games)) { games = b.games.filter(g => g && typeof g.t === 'string' && /^https?:\/\/[^\s"'<>]+\.apk([?#][^\s"'<>]*)?$/i.test(String(g.u))).slice(0, 100).map(g => ({ t: g.t.slice(0, 60), u: String(g.u) })); fs.writeFileSync(path.join(D, 'site', 'Game.js'), 'window.TV_GAMES=' + JSON.stringify(games) + ';\n'); }
+      fs.writeFileSync(path.join(D, 'site', 'schedule.json'), JSON.stringify({ ver: Date.now(), settings, schedule, ads }));
+      return send(res, 200, 'application/json', JSON.stringify({ ok: true, count: schedule.length, logo: logoSaved, names: names && names.length, games: games && games.length }));
+    }
     if (p === '/api/key-status' && req.method === 'GET') { // admin check only; the key itself is never returned
       if (!keyOk(req)) return send(res, 401, 'application/json', '{"error":"key"}');
-      return send(res, 200, 'application/json', JSON.stringify({ configured: !!API_KEY, length: API_KEY.length }));
+      return send(res, 200, 'application/json', JSON.stringify({ configured: !!API_KEY, length: API_KEY.length, key2: { configured: !!API_KEY_2, length: API_KEY_2.length } }));
+    }
+    if (p === '/api/chat' && req.method === 'GET') {
+      const after = +new URL(req.url, 'http://x').searchParams.get('after') || 0;
+      return send(res, 200, 'application/json', JSON.stringify({ ok: true, last: chatId, msgs: chat.filter(x => x.id > after).slice(-100) }));
+    }
+    if (p === '/api/chat' && req.method === 'POST') {
+      const b = await readBody(req, 4e3), hasKey = !!req.headers['x-key'];
+      if (hasKey && !keyOk(req)) return send(res, 401, 'application/json', '{"error":"key"}');
+      const text = cleanTxt(b.text, 300); if (!text) return send(res, 400, 'application/json', '{"error":"text"}');
+      let name = 'admin';
+      if (!hasKey) {
+        name = cleanTxt(b.name, 40);
+        if (name.length < 2 || /^(📢\s*)?admin$/i.test(name)) return send(res, 400, 'application/json', '{"error":"name"}');
+        const al = allowedNames(); if (al.length && !al.includes(name.toLowerCase())) return send(res, 403, 'application/json', '{"error":"not allowed"}');
+        const ip = req.socket.remoteAddress, now = Date.now(), arr = (chatRate.get(ip) || []).filter(t => now - t < 60000);
+        if (arr.length >= 20 || (arr.length && now - arr[arr.length - 1] < 1500)) return send(res, 429, 'application/json', '{"error":"slow down"}');
+        arr.push(now); chatRate.set(ip, arr);
+      }
+      const msg = { id: ++chatId, t: Date.now(), n: name, m: text, ...(hasKey && b.ann ? { a: 1 } : {}) };
+      chat.push(msg); if (chat.length > 200) chat = chat.slice(-200); saveChat();
+      return send(res, 200, 'application/json', JSON.stringify({ ok: true, id: msg.id }));
+    }
+    if (p === '/api/chat/delete' && req.method === 'POST') {
+      if (!keyOk(req)) return send(res, 401, 'application/json', '{"error":"key"}');
+      const b = await readBody(req, 1e3); chat = chat.filter(x => x.id !== +b.id); saveChat();
+      return send(res, 200, 'application/json', '{"ok":true}');
     }
     if (p === '/api/playlists') return send(res, 200, 'application/json', JSON.stringify(Object.keys(PL)));
     const m = p.match(/^\/playlist\/([a-z]+)\.m3u8?$/i);
@@ -123,9 +193,10 @@ mkServer(async (req, res) => {
       if (!PL[name]) return send(res, 404, 'text/plain', 'Unknown playlist');
       return send(res, 200, 'application/vnd.apple.mpegurl; charset=utf-8', await getPlaylist(name));
     }
-    if (['/name.js', '/Game.js', '/schedule.json'].includes(p)) {
-      const f = path.join(__dirname, p.slice(1));
-      return fs.existsSync(f) ? send(res, 200, p.endsWith('.json') ? 'application/json' : 'text/javascript; charset=utf-8', fs.readFileSync(f)) : send(res, 404, 'text/plain', 'not found');
+    if (['/name.js', '/Game.js', '/schedule.json', '/logo.png'].includes(p)) { // files published by admin (data/site) win over files next to Server.js
+      const f = [path.join(D, 'site', p.slice(1)), path.join(__dirname, p.slice(1))].find(x => fs.existsSync(x));
+      const ct = p.endsWith('.json') ? 'application/json' : p.endsWith('.png') ? 'image/png' : 'text/javascript; charset=utf-8';
+      return f ? send(res, 200, ct, fs.readFileSync(f)) : send(res, 404, 'text/plain', 'not found');
     }
     if (p === '/' || p === '/index.html')
       return send(res, 200, 'text/html; charset=utf-8', fs.readFileSync(path.join(__dirname, 'index.html')));
@@ -136,6 +207,7 @@ mkServer(async (req, res) => {
 }).listen(PORT, () => {
   console.log(`TV server running: http://localhost:${PORT}`);
   console.log(API_KEY ? 'API key: configured (hidden)' : 'API key: not set (use API_KEY env var or secrets.js)');
+  console.log(API_KEY_2 ? 'API key 2: configured (hidden)' : 'API key 2: not set (use API_KEY_2 env var or secrets.js)');
   console.log(process.env.PUBLISH_KEY ? 'Publish key: (from PUBLISH_KEY environment variable)' : `Publish key (enter it once in the admin panel): ${KEY}`);
   const lan = Object.values(require('os').networkInterfaces()).flat().filter(n => n && n.family === 'IPv4' && !n.internal).map(n => `http://${n.address}:${PORT}`);
   console.log('Open on phone / other devices (same Wi-Fi): ' + (lan.join('   ') || '(no network found)'));
