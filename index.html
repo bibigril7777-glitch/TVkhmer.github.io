@@ -60,6 +60,7 @@ small{color:#8b949e}
   <div class="list" id="list"></div>
 </section>
 
+<div id="toast" class="hide" style="position:fixed;top:62px;left:10px;right:10px;z-index:50;background:#1f6feb;color:#fff;padding:12px;border-radius:10px;box-shadow:0 4px 16px #0008;font-size:15px;cursor:pointer"></div>
 <section id="p2" class="hide">
   <div id="filewarn" class="hide" style="background:#3d2a00;border:1px solid #d29922;border-radius:8px;padding:10px;margin-bottom:10px;font-size:14px">
     ⚠️ អ្នកកំពុងបើកឯកសារដោយផ្ទាល់ (file://)។ YouTube មិនអាចចាក់បាន ហើយកាលវិភាគពី schedule.json មិនអាចទាញបាន។<br>
@@ -81,9 +82,15 @@ small{color:#8b949e}
     <button class="btn r" onclick="stopST()">⏹ ឈប់</button>
     <button class="btn b" onclick="document.getElementById('stage').requestFullscreen&&document.getElementById('stage').requestFullscreen()">⛶ ពេញអេក្រង់</button>
   </div>
+  <div id="chatbox" class="hide" style="margin-top:12px;background:#161b22;border-radius:10px;padding:10px">
+    <b>💬 ឆាយ</b>
+    <div id="chatlist" style="max-height:200px;overflow:auto;font-size:14px;line-height:1.6;margin:6px 0"></div>
+    <div class="row" style="margin-bottom:0"><input type="text" id="chatin" maxlength="300" placeholder="សរសេរសារ..."><button class="btn" onclick="sendChat()">ផ្ញើ</button></div>
+  </div>
+
   <h3>📅 កាលវិភាគប្រចាំសប្តាហ៍</h3>
   <small id="sync"></small>
-  <div style="margin:4px 0"><small id="cachemsg"></small> <button class="btn r" style="padding:3px 8px;font-size:12px" onclick="clearCache()">🗑️ ជម្រះ</button></div>
+  <div style="margin:4px 0"><small id="cachemsg"></small> <button class="btn r" style="padding:3px 8px;font-size:12px" onclick="clearCache()">🗑️ ជម្រះ</button> <button class="btn" id="bell" style="padding:3px 8px;font-size:12px" onclick="askNotify()">🔔 បើកការជូនដំណឹង</button></div>
   <div class="row hide"><input type="text" id="svr" placeholder="អាសយដ្ឋាន server ឧ. http://192.168.1.5:3000"><button class="btn b" onclick="setSvr()">🔄 ភ្ជាប់ / ទាញថ្មី</button></div>
   <div class="list" id="sched"></div>
 
@@ -101,9 +108,18 @@ small{color:#8b949e}
   <div id="adm" class="hide">
   <p><small id="store">💾 កំពុងពិនិត្យទំហំផ្ទុក...</small></p>
   <p><small id="stats"></small></p>
-  <div class="row"><button class="btn b" onclick="exportCfg()">📤 បង្កើត schedule.json (ឲ្យអ្នកទស្សនាគ្រប់ឧបករណ៍ឃើញ)</button></div>
+  <div class="row"><button class="btn b" onclick="publishSite()">☁️ បង្ហោះទាំងអស់ (schedule.json + logo.png + name.js + Game.js)</button></div>
+  <div class="card" style="padding:8px">
+    <small>🐙 បង្ហោះទៅ GitHub Pages (មិនត្រូវការ server)</small>
+    <div class="row"><input type="text" id="ghrepo" placeholder="owner/repo"><input type="text" id="ghbr" placeholder="branch (main)" style="max-width:130px"></div>
+    <div class="row"><input type="text" id="ghdir" placeholder="ថត (ទទេ = root)"><input type="password" id="ghtok" placeholder="GitHub token (Contents: Read and write)" autocomplete="off"></div>
+    <div class="row"><button class="btn b" onclick="publishGithub()">🐙 បង្ហោះទៅ GitHub (schedule.json + logo.png + name.js + Game.js)</button></div>
+    <small>Token មិនត្រូវបានរក្សាទុកទេ (វាយឡើងវិញរាល់ពេលបើកទំព័រ)។</small>
+  </div>
+  <div class="row"><button class="btn" onclick="downloadAll()">📦 ទាញយកទាំងអស់ (schedule.json + logo.png)</button><button class="btn" onclick="importCfg()">📥 នាំចូលពី schedule.json ដែលកំពុងផ្សាយ</button></div>
   <div class="row"><button class="btn" onclick="checkApi()">🔌 ពិនិត្យ API</button><small id="apimsg"></small></div>
   <p><small id="pub">ដាក់ schedule.json ក្បែរ index.html លើ hosting (GitHub Pages / Netlify) ។ ប្រើតំណ YouTube ឬតំណវិដេអូ .mp4 ដើម្បីចែករំលែកបាន។</small></p>
+  <div class="row"><label class="btn" style="cursor:pointer">📁 ជ្រើស schedule.json ពីឧបករណ៍ (កែ/បង្ហោះ)<input type="file" accept=".json,application/json" class="hide" onchange="importCfgFile(this)"></label></div>
   <div class="row">
     <button class="btn b" onclick="exportBK()">💾 បម្រុងទុក (Export)</button>
     <button class="btn" onclick="document.getElementById('bk').click()">📂 ស្ដារ (Import)</button>
@@ -112,6 +128,7 @@ small{color:#8b949e}
 
   <h3>🏷️ Logo ស្ថានីយ</h3>
   <input type="file" accept="image/*" onchange="setLogo(this)">
+  <div class="row"><button class="btn" onclick="downloadLogo()">💾 ទាញយក logo.png (ដាក់ក្បែរ index.html)</button></div>
   <h3>✍️ អក្សរក្រោម Logo (មានចលនាមុខ-ក្រោយ)</h3>
   <input type="text" id="ltx" placeholder="សរសេរអត្ថបទក្រោម Logo..." oninput="setLtxt()" style="width:100%">
 
@@ -154,6 +171,11 @@ small{color:#8b949e}
   <div class="row"><select id="si"></select><button class="btn" onclick="addSch()">បន្ថែម</button></div>
   <small>វិដេអូចាក់តាមលំដាប់ ថ្ងៃ+ម៉ោង (ច័ន្ទ→អាទិត្យ) ចប់មួយបន្តមួយ ហើយត្រឡប់ទៅច័ន្ទវិញ។ ចាប់ផ្តើមពីកម្មវិធីដែលត្រូវនឹងម៉ោងបច្ចុប្បន្ន។</small>
   <div class="row"><label><input type="checkbox" id="clk" onchange="setClk()"> ⏰ ចាក់តាមម៉ោងពិត (ដល់ម៉ោងកំណត់ ប្តូរកម្មវិធីភ្លាម ហើយចាក់ឡើងវិញរហូតដល់ម៉ោងបន្ទាប់)</label></div>
+
+  <h3>📢 សារជូនដំណឹងដល់អ្នកទស្សនា</h3>
+  <textarea id="noticetx" rows="2" maxlength="300" placeholder="សរសេរសារជូនដំណឹង..."></textarea>
+  <div class="row"><button class="btn" onclick="setNotice()">📌 ដាក់ក្នុងការបង្ហោះបន្ទាប់</button><button class="btn b" onclick="broadcastNotice()">⚡ ផ្សាយភ្លាមៗ (ត្រូវការ Server.js)</button><button class="btn r" onclick="clearNotice()">លុប</button></div>
+  <small id="noticemsg">សារក្នុង schedule.json បង្ហាញដល់អ្នកទស្សនាពេលពួកគេទទួលកាលវិភាគថ្មី (ក្នុង ១ នាទី)។</small>
 
   <h3>🔖 ត្រាអ្នកអនុញ្ញាត (name.js)</h3>
   <textarea id="nmlist" rows="4" placeholder="ឈ្មោះម្នាក់ក្នុងមួយបន្ទាត់។ មានតែឈ្មោះក្នុងបញ្ជីទេដែលមើលបាន (ទទេ = អ្នកណាក៏ចុះឈ្មោះមើលបាន)"></textarea>
@@ -220,7 +242,21 @@ loadCountry();
 let items=[],ads=[],timer,adTimer,idx=0,running=false,remote=null,rads=[],syncErr=false,fetched=false,pendingStart=false;
 const ONHTTP=location.protocol.startsWith('http');
 let SVR=ONHTTP?'':(()=>{try{return(localStorage.getItem('svr')||'').replace(/\/+$/,'')}catch(e){return''}})()||'http://localhost:3000';
-function setLogo(i){if(!isAdm())return;const f=i.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{$('logo').src=r.result;$('logo').classList.remove('hide');try{localStorage.setItem('logo',r.result)}catch(e){}};r.readAsDataURL(f)}
+function setLogo(i){
+  if(!isAdm())return;const f=i.files[0];i.value='';if(!f)return;
+  const im=new Image();
+  im.onload=()=>{const k=Math.min(1,512/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=Math.max(1,Math.round(im.width*k));c.height=Math.max(1,Math.round(im.height*k));
+    c.getContext('2d').drawImage(im,0,0,c.width,c.height);const d=c.toDataURL('image/png');
+    try{localStorage.setItem('logo',d)}catch(e){alert('⚠️ រក្សាទុក Logo មិនបាន')}
+    $('logo').src=d;$('logo').classList.remove('hide')};
+  im.onerror=()=>alert('⚠️ ឯកសារនេះមិនមែនជារូបភាពទេ');
+  im.src=URL.createObjectURL(f);
+}
+async function downloadLogo(){ // រក្សា Logo ជាឯកសារ logo.png ដើម្បីដាក់ក្បែរ index.html លើ hosting
+  if(!isAdm())return;let d='';try{d=localStorage.getItem('logo')||''}catch(e){}
+  if(!d)return alert('មិនទាន់មាន Logo ទេ សូមជ្រើសរូបមុន');
+  const a=document.createElement('a');a.href=URL.createObjectURL(await (await fetch(d)).blob());a.download='logo.png';a.click();
+}
 
 /* ---- ឃ្លាំងផ្ទុកអចិន្ត្រៀយ៍ (IndexedDB) ---- */
 let db;
@@ -443,7 +479,9 @@ function loadSettings(){
   try{sched=JSON.parse(g('sched')||'[]')}catch(e){sched=[]}
   clock=g('clk')!=='0';$('clk').checked=clock;
   const lt=g('ltxt');$('ltx').value=lt;$('ltxt').textContent=lt;$('ltxt').classList.toggle('hide',!lt);
-  setTick();drawSch();showStats();drawGames();
+  try{const g=JSON.parse(localStorage.getItem('gh')||'null');if(g){$('ghrepo').value=g.repo||'';$('ghbr').value=g.br||'';$('ghdir').value=g.dir||''}}catch(e){}
+  try{const n=JSON.parse(localStorage.getItem('notice')||'null');$('noticetx').value=n&&n.text||''}catch(e){}
+  setTick();drawSch();showStats();drawGames();chatShow();
 }
 const getReg=()=>{try{return localStorage.getItem('reg')||''}catch(e){return''}};
 function stageMsg(t){
@@ -452,6 +490,7 @@ function stageMsg(t){
   d.textContent=t;s.appendChild(d);
 }
 function startST(quiet){
+  chatShow();
   if(!isAdm()&&!(getReg()&&allowed(getReg()))){if(quiet===undefined)alert(getReg()?'ឈ្មោះរបស់អ្នកមិនមាននៅក្នុងបញ្ជីអនុញ្ញាតទេ សូមចុះឈ្មោះដែលបានអនុញ្ញាត':'សូមចុះឈ្មោះ (ប្រអប់ខាងក្រោម) ជាមុនសិន ទើបអាចមើលបាន');return}
   Q=buildQ();if(!Q.length){if(isAdm()){if(quiet===undefined)alert('សូមបន្ថែមរូបថត វីដេអូ ឬ YouTube មុន')}else{pendingStart=true;stageMsg(!fetched?'⏳ កំពុងទាញកាលវិភាគ... វិដេអូនឹងចាក់ភ្លាមពេលបានទទួល':'ℹ️ មិនទាន់មានវិដេអូក្នុងកាលវិភាគ។ admin ត្រូវដាក់ schedule.json ក្បែរ index.html ដោយប្រើតំណ YouTube / .mp4')}return}pendingStart=false;
   if(quiet!=='auto')wantSound=true;
@@ -470,7 +509,7 @@ function applyRemote(){
   const s=remote.settings||{};
   $('txt').value=s.txt||'';$('txt2').value=s.txt2||'';$('sz1').value=s.sz1||'m';$('sz2').value=s.sz2||'m';$('spd').value=s.spd||15;
   clock=s.clk=='1';$('clk').checked=clock;
-  if(s.logo)$('logo').src=s.logo;$('logo').classList.toggle('hide',!s.logo);
+  const lg=$('logo');lg.onload=()=>lg.classList.remove('hide');lg.onerror=()=>lg.classList.add('hide');lg.src=s.logo||(()=>{try{return localStorage.getItem('logo')||''}catch(e){return''}})()||'logo.png'; // បើ schedule.json គ្មាន logo ប្រើ logo.png ក្បែរ index.html
   if(s.ovl)$('ovl').src=s.ovl;$('ovl').classList.toggle('hide',!s.ovl);
   $('ltxt').textContent=s.ltxt||'';$('ltxt').classList.toggle('hide',!s.ltxt);
   rads=(remote.ads||[]).map(f=>({src:/^(https?:|data:|\/|\.)/.test(f)?f:SVR+'/media/'+f,name:''}));
@@ -536,7 +575,7 @@ async function loadRemote(){
     $('sync').textContent=(remote||isAdm())?'':'ℹ️ មិនទាន់មានកាលវិភាគដែលបានផ្សព្វផ្សាយ';drawSch();if(pendingStart)startST('auto');return}
   $('sync').textContent=`✅ កាលវិភាគ ${r.schedule.length} កម្មវិធី · ធ្វើបច្ចុប្បន្នភាព ${new Date().toLocaleTimeString()}`;
   if(remote&&r.ver!==undefined&&remote.ver===r.ver)return;
-  remote=r;try{localStorage.setItem('cfgcache',JSON.stringify(r))}catch(e){}precache();if(isAdm())return;
+  const prevVer=remote?remote.ver:(+seen('lastVer')||0);remote=r;news(r,prevVer);try{localStorage.setItem('cfgcache',JSON.stringify(r))}catch(e){}precache();if(isAdm())return;
   applyRemote();drawSch();if(running||pendingStart)startST('auto');
 }
 async function checkApi(){
@@ -544,8 +583,8 @@ async function checkApi(){
   try{const r=await fetch(API_BASE+'/healthcheck',{cache:'no-store'});m.style.color=r.ok?'#3fb950':'#d29922';m.textContent=r.ok?'✅ API ឆ្លើយតប ('+r.status+')':'⚠️ API ឆ្លើយ '+r.status}
   catch(e){m.style.color='#f85149';m.textContent='⚠️ មិនអាចភ្ជាប់ API (អាចជា CORS ឬគ្មានអ៊ីនធឺណិត)'}
 }
-async function exportCfg(){
-  if(!isAdm())return;const P=$('pub');P.style.color='#8b949e';P.textContent='⏳ កំពុងរៀបចំ...';
+const saveBlob=(name,blob)=>{const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;a.click()};
+async function buildCfg(asFile){ // asFile=true ៖ Logo ជាឯកសារ logo.png ដាច់ដោយឡែក
   const small=(src,max)=>new Promise(res=>{const im=new Image();im.onload=()=>{const k=Math.min(1,max/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=Math.round(im.width*k);c.height=Math.round(im.height*k);c.getContext('2d').drawImage(im,0,0,c.width,c.height);res(c.toDataURL('image/jpeg',.8))};im.onerror=()=>res('');im.src=src});
   const schedule=[];let skipped=0;const sk=[];
   for(const s of sched){
@@ -557,10 +596,92 @@ async function exportCfg(){
   }
   const adl=[];for(const a of ads){const d=await small(a.src,600);if(d)adl.push(d)}
   const settings={};['logo','ovl','txt','txt2','sz1','sz2','spd','clk','ltxt'].forEach(k=>{try{settings[k]=localStorage.getItem(k)||''}catch(e){}});
-  const blob=new Blob([JSON.stringify({ver:Date.now(),settings,schedule,ads:adl})],{type:'application/json'});
-  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='schedule.json';a.click();
-  P.style.color=skipped?'#d29922':'#3fb950';
-  P.textContent=`✅ បង្កើត schedule.json (${schedule.length} កម្មវិធី, ពាណិជ្ជកម្ម ${adl.length}) ។ ដាក់ក្បែរ index.html លើ hosting។`+(skipped?` ⚠️ ${skipped} កម្មវិធីមិនអាចចែករំលែកបាន (${sk.slice(0,3).join(', ')}) ព្រោះជាវិដេអូពីទូរស័ព្ទ។ ប្រើតំណ YouTube / .mp4 ឬដាក់ឯកសារក្បែរ index.html ហើយប្រើផ្លូវ videos/ឈ្មោះ.mp4`:'');
+  try{const n=JSON.parse(localStorage.getItem('notice')||'null');if(n&&n.text)settings.notice=n}catch(e){}
+  const isPng=/^data:image\/png;base64,/.test(settings.logo),logo=isPng?settings.logo:'';if(asFile&&isPng)settings.logo='logo.png';
+  return {cfg:{ver:Date.now(),settings,schedule,ads:adl},skipped,sk,logo};
+}
+const skipNote=r=>r.skipped?` ⚠️ ${r.skipped} កម្មវិធីមិនអាចចែករំលែកបាន (${r.sk.slice(0,3).join(', ')}) ព្រោះជាវិដេអូពីទូរស័ព្ទ។ ប្រើតំណ YouTube / .mp4 ជំនួស។`:'';
+async function exportCfg(){ // schedule.json តែមួយ (Logo បញ្ចូលក្នុងឯកសារ)
+  if(!isAdm())return;const P=$('pub');P.style.color='#8b949e';P.textContent='⏳ កំពុងរៀបចំ...';
+  const r=await buildCfg(false);saveBlob('schedule.json',new Blob([JSON.stringify(r.cfg)],{type:'application/json'}));
+  P.style.color=r.skipped?'#d29922':'#3fb950';P.textContent=`✅ បង្កើត schedule.json (${r.cfg.schedule.length} កម្មវិធី)។`+skipNote(r);
+}
+async function downloadAll(auto){ // ទាញយក schedule.json + logo.png ដើម្បីដាក់លើ hosting
+  if(!isAdm())return;const P=$('pub'),r=await buildCfg(true);
+  saveBlob('schedule.json',new Blob([JSON.stringify(r.cfg)],{type:'application/json'}));
+  if(r.logo){try{saveBlob('logo.png',await (await fetch(r.logo)).blob())}catch(e){}}
+  exportNames();exportGames();
+  if(auto!==true){P.style.color=r.skipped?'#d29922':'#3fb950';P.textContent=`✅ ទាញយក schedule.json (${r.cfg.schedule.length} កម្មវិធី)`+(r.logo?' និង logo.png':' (មិនទាន់មាន Logo)')+' ព្រមទាំង name.js និង Game.js ។ ដាក់ទាំងអស់ក្បែរ index.html លើ hosting។'+skipNote(r)}
+}
+async function importCfgFile(i){ // ជ្រើស schedule.json ពីឧបករណ៍ ដើម្បីកែ/បង្ហោះ
+  if(!isAdm())return;const f=i.files[0];i.value='';if(!f)return;
+  try{const j=JSON.parse(await f.text());if(!j||!Array.isArray(j.schedule))throw 0;await importCfg(false,j)}
+  catch(e){const P=$('pub');P.style.color='#f85149';P.textContent='⚠️ schedule.json មិនត្រឹមត្រូវ'}
+}
+async function publishSite(){ // បង្ហោះទៅ Server.js (ត្រូវការ Publish key) ឬទាញយកជំនួស បើគ្មាន server
+  if(!isAdm())return;const P=$('pub');P.style.color='#8b949e';P.textContent='⏳ កំពុងបង្ហោះ...';
+  const r=await buildCfg(true);let key='';try{key=localStorage.getItem('pk')||''}catch(e){}
+  if(!key){key=(prompt('បញ្ចូល Publish key (បង្ហាញក្នុង Terminal របស់ Server.js)')||'').trim();if(!key){P.textContent='';return}}
+  try{
+    const res=await fetch(SVR+'/api/site',{method:'POST',headers:{'x-key':key,'content-type':'application/json'},body:JSON.stringify({cfg:r.cfg,logo:r.logo,names:[...new Set($('nmlist').value.split('\n').map(x=>x.trim()).filter(Boolean))],games:games.filter(g=>g&&isApk(String(g.u||'')))})});
+    if(res.status==401){try{localStorage.removeItem('pk')}catch(e){}throw new Error('KEY')}
+    if(!res.ok)throw new Error('server បដិសេធ ('+res.status+')');
+    try{localStorage.setItem('pk',key)}catch(e){}
+    const j=await res.json();
+    P.style.color=r.skipped?'#d29922':'#3fb950';P.textContent=`✅ បង្ហោះ schedule.json (${j.count} កម្មវិធី)`+(j.logo?' និង logo.png':'')+' រួមទាំង name.js ('+(j.names||0)+' ឈ្មោះ) និង Game.js ('+(j.games||0)+' ហ្គេម) រួច។ អ្នកទស្សនាឃើញក្នុងរយៈ ១ នាទី។'+skipNote(r);
+  }catch(e){
+    P.style.color='#f85149';
+    if(e.message=='KEY'){P.textContent='⚠️ Publish key មិនត្រឹមត្រូវ';return}
+    P.textContent='⚠️ '+(e instanceof TypeError?'មិនមាន Server.js ដែលភ្ជាប់បាន':e.message)+' — ខ្ញុំបានទាញយក schedule.json, logo.png, name.js និង Game.js ជំនួស សូមដាក់ទាំងអស់ក្បែរ index.html លើ hosting ដោយដៃ។';
+    await downloadAll(true);
+  }
+}
+async function ghPut(repo,br,path,blob,tok){ // បង្កើត ឬធ្វើបច្ចុប្បន្នភាពឯកសារមួយក្នុង repo (GitHub Contents API)
+  const api='https://api.github.com/repos/'+repo+'/contents/'+path.split('/').map(encodeURIComponent).join('/');
+  const H={Authorization:'Bearer '+tok,Accept:'application/vnd.github+json'};
+  const g=await fetch(api+'?ref='+encodeURIComponent(br),{headers:H});let sha;
+  if(g.ok)sha=(await g.json()).sha;else if(g.status==401||g.status==403)throw new Error('GH_TOKEN');else if(g.status!=404)throw new Error('GitHub '+g.status);
+  const content=await new Promise(res=>{const fr=new FileReader();fr.onload=()=>res(String(fr.result).split(',')[1]);fr.readAsDataURL(blob)});
+  const r=await fetch(api,{method:'PUT',headers:{...H,'content-type':'application/json'},body:JSON.stringify({message:'Update '+path+' (admin)',content,branch:br,...(sha?{sha}:{})})});
+  if(!r.ok)throw new Error(r.status==401||r.status==403?'GH_TOKEN':r.status==404?'GH_REPO':'GitHub '+r.status+' ('+path+')');
+}
+async function publishGithub(){
+  if(!isAdm())return;const P=$('pub');P.style.color='#f85149';
+  const repo=$('ghrepo').value.trim(),br=$('ghbr').value.trim()||'main',dir=$('ghdir').value.trim().replace(/^\/+|\/+$/g,''),tok=$('ghtok').value.trim();
+  if(!/^[\w.-]+\/[\w.-]+$/.test(repo)){P.textContent='⚠️ ឈ្មោះ repo ត្រូវមានទម្រង់ owner/repo';return}
+  if(!tok){P.textContent='⚠️ សូមបញ្ចូល GitHub token (សិទ្ធិ Contents: Read and write)';return}
+  try{localStorage.setItem('gh',JSON.stringify({repo,br,dir}))}catch(e){}
+  try{
+    const r=await buildCfg(true),pre=dir?dir+'/':'';
+    const names=[...new Set($('nmlist').value.split('\n').map(x=>x.trim()).filter(Boolean))],gl=games.filter(g=>g&&isApk(String(g.u||'')));
+    const files=[['schedule.json',new Blob([JSON.stringify(r.cfg)],{type:'application/json'})]];
+    if(r.logo){try{files.push(['logo.png',await (await fetch(r.logo)).blob()])}catch(e){}}
+    files.push(['name.js',new Blob(['window.TV_NAMES='+JSON.stringify(names)+';\n'],{type:'text/javascript'})]);
+    files.push(['Game.js',new Blob(['window.TV_GAMES='+JSON.stringify(gl)+';\n'],{type:'text/javascript'})]);
+    P.style.color='#8b949e';
+    for(const [n,b] of files){P.textContent='⏳ កំពុងបង្ហោះ '+n+' ទៅ GitHub...';await ghPut(repo,br,pre+n,b,tok)}
+    P.style.color=r.skipped?'#d29922':'#3fb950';
+    $('ghtok').value='';P.textContent=`✅ បង្ហោះ ${files.map(f=>f[0]).join(', ')} ទៅ ${repo} រួច។ GitHub Pages ត្រូវការ ១–២ នាទីដើម្បីធ្វើបច្ចុប្បន្នភាព។`+skipNote(r);
+  }catch(e){
+    P.style.color='#f85149';
+    P.textContent=e.message=='GH_TOKEN'?'⚠️ Token មិនត្រឹមត្រូវ ឬគ្មានសិទ្ធិ Contents: Read and write':e.message=='GH_REPO'?'⚠️ រកមិនឃើញ repo/branch (ឬ token មិនមានសិទ្ធិចូល repo នេះ)':'⚠️ '+(e instanceof TypeError?'មិនអាចភ្ជាប់ GitHub (ពិនិត្យអ៊ីនធឺណិត)':e.message);
+  }
+}
+async function importCfg(auto,given){ // នាំចូលកាលវិភាគដែលកំពុងផ្សាយ មកក្នុងផ្ទាំង admin ដើម្បីកុំឲ្យការបង្ហោះជំនួសវា
+  if(!isAdm())return;const P=$('pub');
+  const r=given||await fetchCfg();
+  if(!r||!(r.schedule||[]).length){if(auto!==true){P.style.color='#f85149';P.textContent='⚠️ រកមិនឃើញ schedule.json ដែលកំពុងផ្សាយ'}return}
+  if(auto!==true&&sched.length&&!confirm('ជំនួសកាលវិភាគក្នុង browser នេះ ដោយ schedule.json ('+r.schedule.length+' កម្មវិធី)?'))return;
+  sched=r.schedule.map((e,i)=>({id:Date.now()+i,day:e.day,time:e.time||'00:00',title:e.title||'',itemId:0,...(e.type=='yt'?{name:'YouTube: '+e.yt,yt:e.yt,ytdur:e.ytdur||60}:{name:e.url,url:e.url,utype:e.type})}));
+  const s=r.settings||{};['txt','txt2','sz1','sz2','spd','clk','ltxt'].forEach(k=>{try{if(s[k]!==undefined&&s[k]!=='')localStorage.setItem(k,String(s[k]))}catch(e){}});
+  let own='';try{own=localStorage.getItem('logo')||''}catch(e){}
+  if(!own&&s.logo){try{
+    const rs=await fetch(s.logo);if(!rs.ok)throw 0;const b=await rs.blob();if(!/^image\//.test(b.type))throw 0;
+    const u=URL.createObjectURL(b);
+    own=await new Promise(res=>{const im=new Image();im.onload=()=>{const k=Math.min(1,512/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=Math.max(1,Math.round(im.width*k));c.height=Math.max(1,Math.round(im.height*k));c.getContext('2d').drawImage(im,0,0,c.width,c.height);res(c.toDataURL('image/png'))};im.onerror=()=>res('');im.src=u});
+    URL.revokeObjectURL(u);if(own)localStorage.setItem('logo',own)}catch(e){own=''}}
+  saveSch();loadSettings();
+  P.style.color='#3fb950';P.textContent=`✅ នាំចូល ${sched.length} កម្មវិធីពី schedule.json រួច។ ឥឡូវអាចកែ ហើយចុច "បង្ហោះទាំងអស់"។`;
 }
 async function publish(){
   if(!isAdm())return;
@@ -593,6 +714,86 @@ async function publish(){
     P.style.color='#3fb950';P.textContent='✅ ផ្សព្វផ្សាយរួច៖ '+schedule.length+' កម្មវិធី ឧបករណ៍ដទៃនឹងឃើញក្នុងរយៈ ១ នាទី';
   }catch(e){P.style.color='#f85149';P.textContent='⚠️ '+(e instanceof TypeError?'មិនអាចភ្ជាប់ server (ត្រូវដំណើរការ node Server.js)':e.message)}
 }
+/* ===== ជូនដំណឹង + ឆាយ ===== */
+const seen=k=>{try{return localStorage.getItem(k)||''}catch(e){return''}};
+const mark=(k,v)=>{try{localStorage.setItem(k,String(v))}catch(e){}};
+let toastT=0;
+function toast(t){const el=$('toast');el.textContent=t;el.classList.remove('hide');clearTimeout(toastT);toastT=setTimeout(()=>el.classList.add('hide'),9000)}
+$('toast').onclick=()=>$('toast').classList.add('hide');
+function notify(title,text){
+  toast(title+' '+text);
+  try{if(navigator.vibrate)navigator.vibrate([200,100,200])}catch(e){}
+  try{if('Notification' in window&&Notification.permission==='granted'&&document.hidden)new Notification(title,{body:text})}catch(e){}
+}
+async function askNotify(){
+  if(!('Notification' in window))return alert('browser នេះមិនគាំទ្រការជូនដំណឹងទេ');
+  try{const p=await Notification.requestPermission();$('bell').textContent=p==='granted'?'🔔 បានបើក':'🔕 ត្រូវបានបដិសេធ'}catch(e){}
+}
+try{if('Notification' in window&&Notification.permission==='granted')$('bell').textContent='🔔 បានបើក'}catch(e){}
+function news(r,prevVer){ // admin បង្ហោះថ្មី ➜ ជូនដំណឹងអ្នកទស្សនា
+  if(isAdm())return;
+  const n=r.settings&&r.settings.notice;
+  if(n&&n.text&&String(n.id)!==seen('seenNotice')){mark('seenNotice',n.id);notify('📢',n.text)}
+  else if(prevVer&&r.ver!==prevVer)notify('📺','កាលវិភាគត្រូវបានធ្វើបច្ចុប្បន្នភាពដោយ admin');
+  if(r.ver!==undefined)mark('lastVer',r.ver);
+}
+let chatOn=false,chatLast=0,chatFail=0,chatInit=false;
+const canChat=()=>chatOn&&(isAdm()||(getReg()&&allowed(getReg())));
+function chatShow(){$('chatbox').classList.toggle('hide',!canChat())}
+async function chatKey(){let k=seen('pk');if(!k){k=(prompt('បញ្ចូល Publish key (បង្ហាញក្នុង Terminal របស់ Server.js)')||'').trim()}return k}
+function chatRender(msgs){
+  const L=$('chatlist'),near=L.scrollHeight-L.scrollTop-L.clientHeight<40;
+  msgs.forEach(m=>{
+    const d=document.createElement('div'),b=document.createElement('b'),t=document.createElement('span');
+    b.textContent=(m.a?'📢 ':'')+m.n+': ';b.style.color=m.a?'#f0883e':m.n==='admin'?'#3fb950':'#58a6ff';t.textContent=m.m;
+    d.appendChild(b);d.appendChild(t);d.dataset.id=m.id;if(m.a)d.style.background='#2d2208';
+    if(isAdm()){const x=document.createElement('button');x.textContent='✕';x.className='btn r';x.style.cssText='padding:0 6px;font-size:11px;margin-left:6px';x.onclick=()=>delChat(m.id,d);d.appendChild(x)}
+    L.appendChild(d);
+    if(chatInit&&m.a&&!isAdm())notify('📢',m.m); // ប្រកាសពី admin ភ្លាមៗ
+  });
+  while(L.children.length>100)L.removeChild(L.firstChild);
+  if(near)L.scrollTop=L.scrollHeight;
+}
+async function chatPoll(){
+  try{
+    const r=await fetch(SVR+'/api/chat?after='+chatLast,{cache:'no-store'});if(!r.ok)throw 0;const j=await r.json();
+    chatFail=0;if(!chatOn)chatOn=true;
+    if(j.last<chatLast){chatLast=0;$('chatlist').innerHTML=''}
+    else if(j.msgs&&j.msgs.length){chatLast=j.last;chatRender(j.msgs)}
+    chatInit=true;chatShow();
+  }catch(e){if(++chatFail>=3&&chatOn){chatOn=false;chatShow()}}
+}
+function chatLoop(){chatPoll().finally(()=>setTimeout(chatLoop,chatOn?3000:60000))} // គ្មាន server ➜ សួរម្តងក្នុង ១ នាទី
+async function sendChat(text,ann){
+  const el=$('chatin');if(typeof text!=='string')text=el.value.trim();if(!text||!canChat())return;
+  const hdr={'content-type':'application/json'};let key='';
+  if(isAdm()){key=await chatKey();if(!key)return;hdr['x-key']=key}
+  try{
+    const r=await fetch(SVR+'/api/chat',{method:'POST',headers:hdr,body:JSON.stringify({name:isAdm()?'admin':getReg(),text,ann:!!ann})});
+    if(r.status==401){mark('pk','');return toast('⚠️ Publish key មិនត្រឹមត្រូវ')}
+    if(r.status==429)return toast('⏳ ផ្ញើលឿនពេក សូមរង់ចាំបន្តិច');
+    if(r.status==403)return toast('⚠️ ឈ្មោះរបស់អ្នកមិនមាននៅក្នុងបញ្ជីអនុញ្ញាតទេ');
+    if(!r.ok)return toast('⚠️ ផ្ញើមិនបាន');
+    if(key)mark('pk',key);if(!ann)el.value='';chatPoll();
+  }catch(e){toast('⚠️ មិនអាចភ្ជាប់ server')}
+}
+async function delChat(id,node){
+  if(!isAdm())return;const key=await chatKey();if(!key)return;
+  try{const r=await fetch(SVR+'/api/chat/delete',{method:'POST',headers:{'content-type':'application/json','x-key':key},body:JSON.stringify({id})});
+    if(r.ok){node&&node.remove();mark('pk',key)}else if(r.status==401){mark('pk','');toast('⚠️ Publish key មិនត្រឹមត្រូវ')}}catch(e){}
+}
+function setNotice(){
+  if(!isAdm())return;const t=$('noticetx').value.trim().slice(0,300),m=$('noticemsg');
+  if(!t){m.textContent='⚠️ សូមសរសេរសារមុន';return false}
+  mark('notice',JSON.stringify({id:Date.now(),text:t}));m.style.color='#3fb950';m.textContent='✅ នឹងបញ្ចូលក្នុង schedule.json ពេលចុច "បង្ហោះ"។';return true;
+}
+function clearNotice(){if(!isAdm())return;try{localStorage.removeItem('notice')}catch(e){}$('noticetx').value='';$('noticemsg').textContent='✅ បានលុបសារជូនដំណឹងពីការបង្ហោះបន្ទាប់។'}
+async function broadcastNotice(){ // ផ្សាយភ្លាមៗតាមឆាយ (Server.js) ព្រមទាំងដាក់ក្នុងការបង្ហោះបន្ទាប់
+  if(!isAdm())return;const t=$('noticetx').value.trim();if(!setNotice())return;
+  if(!chatOn){$('noticemsg').style.color='#d29922';$('noticemsg').textContent='⚠️ មិនមាន Server.js ដែលភ្ជាប់បាន ដូច្នេះដាក់ក្នុង schedule.json ប៉ុណ្ណោះ (អ្នកទស្សនាទទួលពេលបង្ហោះ)។';return}
+  await sendChat(t,true);$('noticemsg').style.color='#3fb950';$('noticemsg').textContent='✅ បានផ្សាយភ្លាមៗទៅអ្នកទស្សនា ហើយដាក់ក្នុងការបង្ហោះបន្ទាប់ផងដែរ។';
+}
+$('chatin').addEventListener('keydown',e=>{if(e.key=='Enter')sendChat()});
 /* ===== ចុះឈ្មោះដោយឈ្មោះ / admin (ក្នុង index.html) ===== */
 const H=s=>{let a=3735928559,b=1103547991;for(let i=0;i<s.length;i++){const c=s.charCodeAt(i);a=Math.imul(a^c,2654435761);b=Math.imul(b^c,1597334677)}a=Math.imul(a^(a>>>16),2246822507)^Math.imul(b^(b>>>13),3266489909);b=Math.imul(b^(b>>>16),2246822507)^Math.imul(a^(a>>>13),3266489909);return(4294967296*(2097151&b)+(a>>>0)).toString(16)};
 const ADMIN_H='26214783468e3'; // hash only — the admin name itself is not written in this file
@@ -604,7 +805,7 @@ const allowed=n=>!nmList().length||nmList().includes(String(n).trim().toLowerCas
 function join(){
   const v=$('who').value.replace(/[\u200B-\u200D\uFEFF]/g,'').trim();$('who').value='';if(!v)return;
   const m=$('msg');
-  if(H(v)===ADMIN_H){adminOn=true;$('adm').classList.remove('hide');loadSettings();m.style.color='#3fb950';m.textContent='(ត្រឹមត្រូវហើយ)';startST(true);return}
+  if(H(v)===ADMIN_H){adminOn=true;$('adm').classList.remove('hide');loadSettings();chatLast=0;chatInit=false;$('chatlist').innerHTML='';chatPoll();/* បង្ហាញប៊ូតុងលុបសារសម្រាប់ admin */if(!sched.length)importCfg(true);m.style.color='#3fb950';m.textContent='(ត្រឹមត្រូវហើយ)';startST(true);return}
   if(NM.test(v)){
     if(!allowed(v)){m.style.color='#f85149';m.textContent='⚠️ ឈ្មោះនេះមិនមាននៅក្នុងបញ្ជីអនុញ្ញាតទេ';return}
     const reg=getReg();
@@ -671,7 +872,7 @@ try{const r=localStorage.getItem('reg');if(r){$('msg').style.color='#3fb950';$('
 $('nmlist').value=(Array.isArray(window.TV_NAMES)?window.TV_NAMES:[]).join('\n');
 
 if(location.protocol==='file:')$('filewarn').classList.remove('hide');
-cacheInit();
+cacheInit();chatLoop();
 init().catch(()=>{}).then(loadRemote).then(()=>{if(clk())startST('auto')});if(ONHTTP)$('svr').classList.add('hide');loadSettings();setInterval(loadRemote,60000);
 </script>
 </body>
